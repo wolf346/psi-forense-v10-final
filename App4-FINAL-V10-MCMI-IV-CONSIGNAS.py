@@ -39,168 +39,6 @@ def init_db():
 
 init_db()
 
-# ==================== PARCHE CLOUD V13 - MULTI-COMPU SEGURO ====================
-# Soporta Supabase (seguro) y NPoint (tu bin 0cd6487f89872f8103c1)
-# Si no hay secrets, usa SQLite local
-import requests
-import json as json_lib
-
-SUPABASE_URL = None
-SUPABASE_KEY = None
-NPOINT_URL = None
-CLOUD_MODE = "sqlite"
-
-try:
-    SUPABASE_URL = st.secrets.get("SUPABASE_URL", None)
-    SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", None)
-    NPOINT_URL = st.secrets.get("NPOINT_URL", None)
-except Exception:
-    pass
-
-if SUPABASE_URL and SUPABASE_KEY:
-    CLOUD_MODE = "supabase"
-elif NPOINT_URL:
-    CLOUD_MODE = "npoint"
-
-def supabase_req(method, path, data=None):
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return None
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-        "Prefer": "return=representation"
-    }
-    url = f"{SUPABASE_URL}/rest/v1/{path}"
-    try:
-        if method == "GET":
-            r = requests.get(url, headers=headers, timeout=15)
-        elif method == "POST":
-            headers["Prefer"] = "resolution=merge-duplicates"
-            r = requests.post(url, headers=headers, json=data, timeout=15)
-        elif method == "DELETE":
-            r = requests.delete(url, headers=headers, timeout=15)
-        else:
-            return None
-        if r.status_code in [200, 201, 204]:
-            return r.json() if r.text else []
-        return None
-    except:
-        return None
-
-def cargar_datos_db_cloud():
-    if CLOUD_MODE == "supabase":
-        rows = supabase_req("GET", "evaluaciones_periciales?select=*")
-        if not rows:
-            return {}
-        data = {}
-        for row in rows:
-            token = row.get("token")
-            try:
-                dp = json_lib.loads(row.get("datos_persona")) if isinstance(row.get("datos_persona"), str) else (row.get("datos_persona") or {})
-            except:
-                dp = {}
-            try:
-                ev = json_lib.loads(row.get("evaluaciones")) if isinstance(row.get("evaluaciones"), str) else (row.get("evaluaciones") or {})
-            except:
-                ev = {}
-            data[token] = {
-                "estado": row.get("estado", "activa"),
-                "datos_persona": dp,
-                "evaluaciones": ev,
-                "ip_acceso": row.get("ip_acceso"),
-                "user_agent": row.get("user_agent"),
-                "hash_bloque": row.get("hash_bloque"),
-                "fecha_creacion": row.get("fecha_creacion"),
-                "fecha_actualizacion": row.get("fecha_actualizacion"),
-            }
-        return data
-    elif CLOUD_MODE == "npoint":
-        try:
-            r = requests.get(NPOINT_URL, timeout=10)
-            if r.status_code == 200:
-                j = r.json()
-                return j.get("evaluaciones", j) if isinstance(j, dict) else {}
-        except:
-            pass
-        return {}
-    else:
-        return cargar_datos_db_original()
-
-def guardar_token_db_cloud(token, info_dict):
-    if CLOUD_MODE == "supabase":
-        payload = {
-            "token": token,
-            "estado": info_dict.get("estado", "activa"),
-            "datos_persona": json_lib.dumps(info_dict.get("datos_persona"), ensure_ascii=False),
-            "evaluaciones": json_lib.dumps(info_dict.get("evaluaciones", {}), ensure_ascii=False),
-            "ip_acceso": str(info_dict.get("ip_acceso", "Desconocida"))[:100],
-            "user_agent": str(info_dict.get("user_agent", "Desconocido"))[:200],
-            "hash_bloque": str(info_dict.get("hash_bloque", ""))[:200],
-            "hash_anterior": str(info_dict.get("hash_anterior", "GENESIS"))[:200],
-            "fecha_actualizacion": datetime.now(TZ).isoformat(),
-            "fecha_creacion": info_dict.get("fecha_creacion") or datetime.now(TZ).isoformat()
-        }
-        supabase_req("POST", "evaluaciones_periciales", payload)
-        try:
-            guardar_token_db_original(token, info_dict)
-        except:
-            pass
-    elif CLOUD_MODE == "npoint":
-        try:
-            r = requests.get(NPOINT_URL, timeout=10)
-            all_data = {}
-            if r.status_code == 200:
-                j = r.json()
-                all_data = j.get("evaluaciones", j) if isinstance(j, dict) else {}
-            all_data[token] = {
-                "estado": info_dict.get("estado", "activa"),
-                "datos_persona": info_dict.get("datos_persona"),
-                "evaluaciones": info_dict.get("evaluaciones", {}),
-                "ip_acceso": info_dict.get("ip_acceso"),
-                "user_agent": info_dict.get("user_agent"),
-                "hash_bloque": info_dict.get("hash_bloque"),
-                "fecha_actualizacion": datetime.now(TZ).isoformat(),
-                "fecha_creacion": info_dict.get("fecha_creacion") or datetime.now(TZ).isoformat()
-            }
-            requests.post(NPOINT_URL, json={"evaluaciones": all_data}, timeout=10)
-        except:
-            pass
-        try:
-            guardar_token_db_original(token, info_dict)
-        except:
-            pass
-    else:
-        guardar_token_db_original(token, info_dict)
-
-def eliminar_token_db_cloud(token):
-    if CLOUD_MODE == "supabase":
-        supabase_req("DELETE", f"evaluaciones_periciales?token=eq.{token}")
-    elif CLOUD_MODE == "npoint":
-        try:
-            r = requests.get(NPOINT_URL, timeout=10)
-            if r.status_code == 200:
-                j = r.json()
-                all_data = j.get("evaluaciones", j) if isinstance(j, dict) else {}
-                if token in all_data:
-                    del all_data[token]
-                    requests.post(NPOINT_URL, json={"evaluaciones": all_data}, timeout=10)
-        except:
-            pass
-    try:
-        eliminar_token_db_original(token)
-    except:
-        pass
-
-cargar_datos_db_original = cargar_datos_db
-guardar_token_db_original = guardar_token_db
-eliminar_token_db_original = eliminar_token_db
-cargar_datos_db = cargar_datos_db_cloud
-guardar_token_db = guardar_token_db_cloud
-eliminar_token_db = eliminar_token_db_cloud
-# ==================== FIN PARCHE CLOUD V13 ====================
-
-
 def cargar_datos_db():
   conn = sqlite3.connect(DB_NAME, check_same_thread=False)
   cursor = conn.cursor()
@@ -257,6 +95,172 @@ def generar_token_unico(longitud=6):
   caracteres = string.ascii_uppercase + string.digits
   codigo = "".join(random.choice(caracteres) for _ in range(longitud))
   return f"EVAL-{codigo}"
+
+
+# ==================== PARCHE CLOUD V14 - MULTI-COMPU FINAL ====================
+# Fix para: NameError y SyntaxError de versiones anteriores + sync entre compus
+# Usa tu bin: https://api.npoint.io/0cd6487f89872f8103c1
+import requests as req_lib
+import json as json_lib
+
+CLOUD_MODE = "sqlite"
+NPOINT_URL = None
+SUPABASE_URL = None
+SUPABASE_KEY = None
+
+try:
+    NPOINT_URL = st.secrets.get("NPOINT_URL", None)
+    SUPABASE_URL = st.secrets.get("SUPABASE_URL", None)
+    SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", None)
+except Exception:
+    pass
+
+if SUPABASE_URL and SUPABASE_KEY:
+    CLOUD_MODE = "supabase"
+elif NPOINT_URL:
+    CLOUD_MODE = "npoint"
+
+def supabase_req(method, path, data=None):
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return None
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+    }
+    url = f"{SUPABASE_URL}/rest/v1/{path}"
+    try:
+        if method == "GET":
+            r = req_lib.get(url, headers=headers, timeout=15)
+        elif method == "POST":
+            headers["Prefer"] = "resolution=merge-duplicates"
+            r = req_lib.post(url, headers=headers, json=data, timeout=15)
+        elif method == "DELETE":
+            r = req_lib.delete(url, headers=headers, timeout=15)
+        else:
+            return None
+        if r.status_code in [200, 201, 204]:
+            return r.json() if r.text else []
+        return None
+    except:
+        return None
+
+def cargar_datos_db_cloud():
+    if CLOUD_MODE == "supabase":
+        rows = supabase_req("GET", "evaluaciones_periciales?select=*")
+        if not rows:
+            return {}
+        data = {}
+        for row in rows:
+            token = row.get("token")
+            try:
+                dp = json_lib.loads(row.get("datos_persona")) if isinstance(row.get("datos_persona"), str) else (row.get("datos_persona") or {})
+            except:
+                dp = {}
+            try:
+                ev = json_lib.loads(row.get("evaluaciones")) if isinstance(row.get("evaluaciones"), str) else (row.get("evaluaciones") or {})
+            except:
+                ev = {}
+            data[token] = {
+                "estado": row.get("estado", "activa"),
+                "datos_persona": dp,
+                "evaluaciones": ev,
+                "ip_acceso": row.get("ip_acceso"),
+                "user_agent": row.get("user_agent"),
+                "hash_bloque": row.get("hash_bloque"),
+                "fecha_creacion": row.get("fecha_creacion"),
+                "fecha_actualizacion": row.get("fecha_actualizacion"),
+            }
+        return data
+    elif CLOUD_MODE == "npoint":
+        try:
+            r = req_lib.get(NPOINT_URL, timeout=10)
+            if r.status_code == 200:
+                j = r.json()
+                return j.get("evaluaciones", j) if isinstance(j, dict) else {}
+        except:
+            pass
+        return {}
+    else:
+        return cargar_datos_db_original()
+
+def guardar_token_db_cloud(token, info_dict):
+    if CLOUD_MODE == "supabase":
+        payload = {
+            "token": token,
+            "estado": info_dict.get("estado", "activa"),
+            "datos_persona": json_lib.dumps(info_dict.get("datos_persona"), ensure_ascii=False),
+            "evaluaciones": json_lib.dumps(info_dict.get("evaluaciones", {}), ensure_ascii=False),
+            "ip_acceso": str(info_dict.get("ip_acceso", "Desconocida"))[:100],
+            "user_agent": str(info_dict.get("user_agent", "Desconocido"))[:200],
+            "hash_bloque": str(info_dict.get("hash_bloque", ""))[:200],
+            "hash_anterior": str(info_dict.get("hash_anterior", "GENESIS"))[:200],
+            "fecha_actualizacion": datetime.now(TZ).isoformat(),
+            "fecha_creacion": info_dict.get("fecha_creacion") or datetime.now(TZ).isoformat()
+        }
+        supabase_req("POST", "evaluaciones_periciales", payload)
+        try:
+            guardar_token_db_original(token, info_dict)
+        except:
+            pass
+    elif CLOUD_MODE == "npoint":
+        try:
+            r = req_lib.get(NPOINT_URL, timeout=10)
+            all_data = {}
+            if r.status_code == 200:
+                j = r.json()
+                all_data = j.get("evaluaciones", j) if isinstance(j, dict) else {}
+            all_data[token] = {
+                "estado": info_dict.get("estado", "activa"),
+                "datos_persona": info_dict.get("datos_persona"),
+                "evaluaciones": info_dict.get("evaluaciones", {}),
+                "ip_acceso": info_dict.get("ip_acceso"),
+                "user_agent": info_dict.get("user_agent"),
+                "hash_bloque": info_dict.get("hash_bloque"),
+                "fecha_actualizacion": datetime.now(TZ).isoformat(),
+                "fecha_creacion": info_dict.get("fecha_creacion") or datetime.now(TZ).isoformat()
+            }
+            req_lib.post(NPOINT_URL, json={"evaluaciones": all_data}, timeout=10)
+        except:
+            pass
+        try:
+            guardar_token_db_original(token, info_dict)
+        except:
+            pass
+    else:
+        guardar_token_db_original(token, info_dict)
+
+def eliminar_token_db_cloud(token):
+    if CLOUD_MODE == "supabase":
+        supabase_req("DELETE", f"evaluaciones_periciales?token=eq.{token}")
+    elif CLOUD_MODE == "npoint":
+        try:
+            r = req_lib.get(NPOINT_URL, timeout=10)
+            if r.status_code == 200:
+                j = r.json()
+                all_data = j.get("evaluaciones", j) if isinstance(j, dict) else {}
+                if token in all_data:
+                    del all_data[token]
+                    req_lib.post(NPOINT_URL, json={"evaluaciones": all_data}, timeout=10)
+        except:
+            pass
+    try:
+        eliminar_token_db_original(token)
+    except:
+        pass
+
+# Guardamos originales (ya existen porque estamos después de su definición)
+cargar_datos_db_original = cargar_datos_db
+guardar_token_db_original = guardar_token_db
+eliminar_token_db_original = eliminar_token_db
+
+# Sobrescribimos para que todo el código use cloud
+cargar_datos_db = cargar_datos_db_cloud
+guardar_token_db = guardar_token_db_cloud
+eliminar_token_db = eliminar_token_db_cloud
+# ==================== FIN PARCHE CLOUD V14 ====================
+
 
 if "perito_autenticado" not in st.session_state:
   st.session_state["perito_autenticado"] = False

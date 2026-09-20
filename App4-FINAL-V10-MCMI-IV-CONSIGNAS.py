@@ -1789,11 +1789,87 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
 
         if excel_ok:
             output_excel.seek(0)
-            st.download_button("📊 DESCARGAR EXCEL DE TODOS", data=output_excel, file_name=f"forense_{datetime.now(TZ).strftime('%Y%m%d_%H%M')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            st.download_button("📊 DESCARGAR EXCEL DE TODOS (Resumen)", data=output_excel, file_name=f"forense_{datetime.now(TZ).strftime('%Y%m%d_%H%M')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         else:
             csv_data = df.to_csv(index=False).encode('utf-8')
             st.warning("openpyxl no disponible, descargando CSV")
             st.download_button("📊 DESCARGAR CSV DE TODOS", data=csv_data, file_name=f"forense_{datetime.now(TZ).strftime('%Y%m%d_%H%M')}.csv", mime="text/csv")
+        
+        # --- NUEVO: Excel global con TODAS las preguntas y respuestas ---
+        try:
+            import io as io_mod2
+            output_global_det = io_mod2.BytesIO()
+            try:
+                import openpyxl
+                engine2 = 'openpyxl'
+            except:
+                engine2 = 'xlsxwriter'
+            
+            with pd.ExcelWriter(output_global_det, engine=engine2) as writer2:
+                # Hoja resumen igual que antes
+                df.to_excel(writer2, sheet_name="Resumen Protocolos", index=False)
+                
+                # Hoja detalle larga con todas las respuestas + preguntas
+                filas_detalle=[]
+                for tok, inf in datos.items():
+                    dp2 = inf.get("datos_persona") or {}
+                    evs2 = inf.get("evaluaciones") or {}
+                    for test_n, resp_dict in evs2.items():
+                        for p_k, r_v in resp_dict.items():
+                            try:
+                                n = int(p_k.split('_')[1]) - 1
+                            except:
+                                n = 0
+                            preg = p_k
+                            etiqueta = str(r_v)
+                            try:
+                                if "LSB-50" in test_n and n < len(ITEMS_LSB50):
+                                    preg = ITEMS_LSB50[n]
+                                    etiqueta = OPCIONES_LSB50.get(str(r_v), str(r_v))
+                                elif "MCMI-III" in test_n and n < len(ITEMS_MCMIIII):
+                                    preg = ITEMS_MCMIIII[n]
+                                elif "MCMI-IV" in test_n and n < len(ITEMS_MCMI_IV):
+                                    preg = ITEMS_MCMI_IV[n]
+                                elif "CUIDA" in test_n and n < len(ITEMS_CUIDA):
+                                    preg = ITEMS_CUIDA[n]
+                                    etiqueta = OPCIONES_CUIDA.get(str(r_v), str(r_v))
+                                elif "STAI" in test_n and n < len(ITEMS_STAI):
+                                    preg = ITEMS_STAI[n]
+                                elif "BDI-II" in test_n and n < len(ITEMS_BDI):
+                                    preg = ITEMS_BDI[n].get('titulo','')
+                                    etiqueta = str(r_v)
+                                elif "PAI" in test_n and n < len(ITEMS_PAI):
+                                    preg = ITEMS_PAI[n]
+                                    etiqueta = OPCIONES_PAI.get(str(r_v), str(r_v))
+                            except:
+                                pass
+                            filas_detalle.append({
+                                "Token": tok,
+                                "Nombre": f"{dp2.get('nombre','')} {dp2.get('apellido','')}".strip(),
+                                "DNI": dp2.get('dni',''),
+                                "Localidad": dp2.get('localidad',''),
+                                "Test": test_n,
+                                "Nº": n+1,
+                                "Pregunta": preg,
+                                "Respuesta_Valor": r_v,
+                                "Respuesta_Texto": etiqueta
+                            })
+                if filas_detalle:
+                    pd.DataFrame(filas_detalle).to_excel(writer2, sheet_name="Detalle con Preguntas", index=False)
+            
+            output_global_det.seek(0)
+            st.download_button(
+                "📥 DESCARGAR EXCEL GLOBAL CON PREGUNTAS",
+                data=output_global_det,
+                file_name=f"forense_GLOBAL_CON_PREGUNTAS_{datetime.now(TZ).strftime('%Y%m%d_%H%M')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="dl_global_preguntas",
+                type="secondary",
+                use_container_width=True
+            )
+        except Exception as e:
+            st.warning(f"No se pudo generar Excel global con preguntas: {e}")
+
 
         st.divider()
 
@@ -1893,6 +1969,99 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
                                 st.dataframe(df_r, hide_index=True, use_container_width=True)
                             except Exception as e:
                                 st.json(respuestas_dict)
+                        # --- GENERAR EXCEL CON PREGUNTAS PARA ESTE PROTOCOLO ---
+                        try:
+                            import io as io_mod
+                            import pandas as pd
+                            output_det = io_mod.BytesIO()
+                            try:
+                                engine = 'openpyxl'
+                                # Probar si existe
+                                import openpyxl
+                            except:
+                                engine = 'xlsxwriter'
+                            
+                            with pd.ExcelWriter(output_det, engine=engine) as writer:
+                                # Hoja 1: Datos filiatorios
+                                datos_filia = {
+                                    "Campo": ["Código Protocolo", "Nombre", "Apellido", "Edad", "DNI", "Localidad", "Consentimiento", "Fecha Consentimiento", "IP", "Hash Bloque", "Hash Identidad", "Fecha Creación", "Actualización"],
+                                    "Valor": [
+                                        clave,
+                                        persona.get('nombre',''),
+                                        persona.get('apellido',''),
+                                        persona.get('edad',''),
+                                        persona.get('dni',''),
+                                        persona.get('localidad',''),
+                                        "Sí" if persona.get('consentimiento') else "No",
+                                        persona.get('fecha_consentimiento',''),
+                                        info.get('ip_acceso',''),
+                                        info.get('hash_bloque',''),
+                                        hash_id,
+                                        info.get('fecha_creacion',''),
+                                        info.get('fecha_actualizacion','')
+                                    ]
+                                }
+                                pd.DataFrame(datos_filia).to_excel(writer, sheet_name="Datos Personales", index=False)
+                                
+                                # Una hoja por test con preguntas
+                                for test_nombre, respuestas_dict in evals.items():
+                                    tabla_excel=[]
+                                    for p_key, resp_val in respuestas_dict.items():
+                                        try:
+                                            num = int(p_key.split('_')[1]) - 1
+                                        except:
+                                            num = 0
+                                        pregunta_texto = p_key
+                                        resp_valor = resp_val
+                                        resp_etiqueta = str(resp_val)
+                                        try:
+                                            if "LSB-50" in test_nombre and num < len(ITEMS_LSB50):
+                                                pregunta_texto = ITEMS_LSB50[num]
+                                                resp_etiqueta = OPCIONES_LSB50.get(str(resp_val), OPCIONES_LSB50.get(resp_val, str(resp_val)))
+                                            elif "MCMI-III" in test_nombre and num < len(ITEMS_MCMIIII):
+                                                pregunta_texto = ITEMS_MCMIIII[num]
+                                            elif "MCMI-IV" in test_nombre and num < len(ITEMS_MCMI_IV):
+                                                pregunta_texto = ITEMS_MCMI_IV[num]
+                                            elif "CUIDA" in test_nombre and num < len(ITEMS_CUIDA):
+                                                pregunta_texto = ITEMS_CUIDA[num]
+                                                resp_etiqueta = OPCIONES_CUIDA.get(str(resp_val), OPCIONES_CUIDA.get(resp_val, str(resp_val)))
+                                            elif "STAI" in test_nombre and num < len(ITEMS_STAI):
+                                                pregunta_texto = ITEMS_STAI[num]
+                                                resp_etiqueta = OPCIONES_STAI.get(str(resp_val), OPCIONES_STAI.get(resp_val, str(resp_val)))
+                                            elif "BDI-II" in test_nombre and num < len(ITEMS_BDI):
+                                                item = ITEMS_BDI[num]
+                                                pregunta_texto = item.get('titulo', f"Ítem {num+1}")
+                                                # Para BDI, resp es el texto elegido
+                                                resp_etiqueta = str(resp_val)
+                                            elif "PAI" in test_nombre and num < len(ITEMS_PAI):
+                                                pregunta_texto = ITEMS_PAI[num]
+                                                resp_etiqueta = OPCIONES_PAI.get(str(resp_val), str(resp_val))
+                                        except:
+                                            pass
+                                        tabla_excel.append({
+                                            "Nº": num+1,
+                                            "Pregunta": pregunta_texto,
+                                            "Respuesta_Valor": resp_valor,
+                                            "Respuesta_Texto": resp_etiqueta
+                                        })
+                                    # Ordenar por Nº
+                                    df_excel = pd.DataFrame(tabla_excel).sort_values("Nº")
+                                    # Nombre de hoja máximo 31 caracteres
+                                    sheet_name = test_nombre[:31]
+                                    df_excel.to_excel(writer, sheet_name=sheet_name, index=False)
+                            
+                            output_det.seek(0)
+                            st.download_button(
+                                f"📥 DESCARGAR EXCEL CON PREGUNTAS - {clave}",
+                                data=output_det,
+                                file_name=f"Protocolo_{clave}_{persona.get('apellido','Evaluado')}_{test_nombre[:10]}_CON_PREGUNTAS.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                key=f"dl_excel_preguntas_{clave}",
+                                type="primary",
+                                use_container_width=True
+                            )
+                        except Exception as e:
+                            st.error(f"No se pudo generar Excel con preguntas: {e}")
                 st.divider()
 
 else:

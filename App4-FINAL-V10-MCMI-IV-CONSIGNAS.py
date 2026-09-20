@@ -13,10 +13,189 @@ hide_style = """<style>#MainMenu {visibility: hidden;} footer {visibility: hidde
 st.markdown(hide_style, unsafe_allow_html=True)
 
 CONTRASEÑA_MAESTRA = "MiClavePericial2026"
-DB_NAME = "forense_seguro.db"
+DB_NAME = str(Path(__file__).parent / "forense_seguro.db")
 TZ = ZoneInfo("America/Argentina/Buenos_Aires")
 
-def init_db():
+def init_db()
+
+# ==================== PARCHE CLOUD SYNC V11 - MULTI-COMPU ====================
+# Este parche hace que "Actualizar" vea lo de otra compu en otro lugar
+# Mantiene tu base intacta, solo cambia dónde se guarda
+import requests
+from pathlib import Path
+import json as json_lib
+
+# Intenta cargar secrets para cloud
+NPOINT_URL = None
+SUPABASE_URL = None
+SUPABASE_KEY = None
+CLOUD_MODE = "sqlite"  # sqlite | npoint | supabase
+
+try:
+    NPOINT_URL = st.secrets.get("NPOINT_URL", None)
+    SUPABASE_URL = st.secrets.get("SUPABASE_URL", None)
+    SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", None)
+except:
+    pass
+
+if SUPABASE_URL and SUPABASE_KEY:
+    CLOUD_MODE = "supabase"
+elif NPOINT_URL:
+    CLOUD_MODE = "npoint"
+else:
+    CLOUD_MODE = "sqlite"
+
+# ---------- SUPABASE (recomendado para producción) ----------
+def supabase_request(method, path, data=None):
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+    }
+    url = f"{SUPABASE_URL}/rest/v1/{path}"
+    try:
+        if method == "GET":
+            r = requests.get(url, headers=headers, timeout=10)
+        elif method == "POST":
+            r = requests.post(url, headers=headers, json=data, timeout=10)
+        elif method == "PATCH":
+            r = requests.patch(url, headers=headers, json=data, timeout=10)
+        elif method == "DELETE":
+            r = requests.delete(url, headers=headers, timeout=10)
+        else:
+            return None
+        if r.status_code in [200, 201, 204]:
+            return r.json() if r.text else []
+        else:
+            st.warning(f"Supabase error {r.status_code}: {r.text[:200]}")
+            return None
+    except Exception as e:
+        st.error(f"Error Supabase: {e}")
+        return None
+
+def cargar_datos_db_cloud():
+    if CLOUD_MODE == "supabase":
+        rows = supabase_request("GET", "evaluaciones_periciales?select=*")
+        if rows is None:
+            return {}
+        data = {}
+        for row in rows:
+            token = row.get("token")
+            try:
+                dp = json_lib.loads(row.get("datos_persona")) if isinstance(row.get("datos_persona"), str) else (row.get("datos_persona") or {})
+            except:
+                dp = {}
+            try:
+                ev = json_lib.loads(row.get("evaluaciones")) if isinstance(row.get("evaluaciones"), str) else (row.get("evaluaciones") or {})
+            except:
+                ev = {}
+            data[token] = {
+                "estado": row.get("estado", "activa"),
+                "datos_persona": dp,
+                "evaluaciones": ev,
+                "ip_acceso": row.get("ip_acceso"),
+                "user_agent": row.get("user_agent"),
+                "hash_bloque": row.get("hash_bloque"),
+                "fecha_creacion": row.get("fecha_creacion"),
+                "fecha_actualizacion": row.get("fecha_actualizacion"),
+            }
+        return data
+    elif CLOUD_MODE == "npoint":
+        try:
+            r = requests.get(NPOINT_URL, timeout=10)
+            if r.status_code == 200:
+                j = r.json()
+                # npoint puede guardar {evaluaciones: {token: {...}}} o directo
+                if "evaluaciones" in j:
+                    return j["evaluaciones"]
+                return j
+        except Exception as e:
+            st.error(f"Error NPoint GET: {e}")
+        return {}
+    else:
+        # Fallback sqlite local (no sincroniza entre compus)
+        return cargar_datos_db()
+
+def guardar_token_db_cloud(token, info_dict):
+    if CLOUD_MODE == "supabase":
+        payload = {
+            "token": token,
+            "estado": info_dict.get("estado", "activa"),
+            "datos_persona": json_lib.dumps(info_dict.get("datos_persona"), ensure_ascii=False),
+            "evaluaciones": json_lib.dumps(info_dict.get("evaluaciones", {}), ensure_ascii=False),
+            "ip_acceso": info_dict.get("ip_acceso", "Desconocida"),
+            "user_agent": info_dict.get("user_agent", "Desconocido"),
+            "hash_bloque": info_dict.get("hash_bloque", ""),
+            "hash_anterior": info_dict.get("hash_anterior", "GENESIS"),
+            "fecha_actualizacion": datetime.now(TZ).isoformat()
+        }
+        # Upsert
+        headers = {
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates"
+        }
+        try:
+            requests.post(f"{SUPABASE_URL}/rest/v1/evaluaciones_periciales", headers=headers, json=payload, timeout=10)
+        except Exception as e:
+            st.error(f"Error guardando en Supabase: {e}")
+            guardar_token_db(token, info_dict)  # backup local
+    elif CLOUD_MODE == "npoint":
+        try:
+            # npoint: hay que hacer GET, modificar y POST completo (no soporta PATCH parcial)
+            r = requests.get(NPOINT_URL, timeout=10)
+            all_data = {}
+            if r.status_code == 200:
+                j = r.json()
+                all_data = j.get("evaluaciones", j) if isinstance(j, dict) else {}
+            all_data[token] = {
+                "estado": info_dict.get("estado", "activa"),
+                "datos_persona": info_dict.get("datos_persona"),
+                "evaluaciones": info_dict.get("evaluaciones", {}),
+                "ip_acceso": info_dict.get("ip_acceso"),
+                "user_agent": info_dict.get("user_agent"),
+                "hash_bloque": info_dict.get("hash_bloque"),
+                "fecha_actualizacion": datetime.now(TZ).isoformat(),
+                "fecha_creacion": info_dict.get("fecha_creacion") or datetime.now(TZ).isoformat()
+            }
+            # npoint guarda todo el json
+            requests.post(NPOINT_URL, json={"evaluaciones": all_data}, timeout=10)
+        except Exception as e:
+            st.error(f"Error NPoint POST: {e}")
+            guardar_token_db(token, info_dict)
+    else:
+        guardar_token_db(token, info_dict)
+
+def eliminar_token_db_cloud(token):
+    if CLOUD_MODE == "supabase":
+        supabase_request("DELETE", f"evaluaciones_periciales?token=eq.{token}")
+    elif CLOUD_MODE == "npoint":
+        try:
+            r = requests.get(NPOINT_URL, timeout=10)
+            if r.status_code == 200:
+                j = r.json()
+                all_data = j.get("evaluaciones", j)
+                if token in all_data:
+                    del all_data[token]
+                    requests.post(NPOINT_URL, json={"evaluaciones": all_data}, timeout=10)
+        except Exception as e:
+            st.error(f"Error borrando NPoint: {e}")
+    else:
+        eliminar_token_db(token)
+
+# Sobrescribe funciones originales para que todo el código use cloud
+# (mantenemos las originales como backup sqlite)
+cargar_datos_db_original = cargar_datos_db
+guardar_token_db_original = guardar_token_db
+eliminar_token_db_original = eliminar_token_db
+
+cargar_datos_db = cargar_datos_db_cloud
+guardar_token_db = guardar_token_db_cloud
+eliminar_token_db = eliminar_token_db_cloud
+# ==================== FIN PARCHE CLOUD SYNC V11 ====================
+:
   conn = sqlite3.connect(DB_NAME, check_same_thread=False)
   cursor = conn.cursor()
   cursor.execute("""
@@ -37,6 +216,185 @@ def init_db():
   conn.close()
 
 init_db()
+
+# ==================== PARCHE CLOUD SYNC V11 - MULTI-COMPU ====================
+# Este parche hace que "Actualizar" vea lo de otra compu en otro lugar
+# Mantiene tu base intacta, solo cambia dónde se guarda
+import requests
+from pathlib import Path
+import json as json_lib
+
+# Intenta cargar secrets para cloud
+NPOINT_URL = None
+SUPABASE_URL = None
+SUPABASE_KEY = None
+CLOUD_MODE = "sqlite"  # sqlite | npoint | supabase
+
+try:
+    NPOINT_URL = st.secrets.get("NPOINT_URL", None)
+    SUPABASE_URL = st.secrets.get("SUPABASE_URL", None)
+    SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", None)
+except:
+    pass
+
+if SUPABASE_URL and SUPABASE_KEY:
+    CLOUD_MODE = "supabase"
+elif NPOINT_URL:
+    CLOUD_MODE = "npoint"
+else:
+    CLOUD_MODE = "sqlite"
+
+# ---------- SUPABASE (recomendado para producción) ----------
+def supabase_request(method, path, data=None):
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+    }
+    url = f"{SUPABASE_URL}/rest/v1/{path}"
+    try:
+        if method == "GET":
+            r = requests.get(url, headers=headers, timeout=10)
+        elif method == "POST":
+            r = requests.post(url, headers=headers, json=data, timeout=10)
+        elif method == "PATCH":
+            r = requests.patch(url, headers=headers, json=data, timeout=10)
+        elif method == "DELETE":
+            r = requests.delete(url, headers=headers, timeout=10)
+        else:
+            return None
+        if r.status_code in [200, 201, 204]:
+            return r.json() if r.text else []
+        else:
+            st.warning(f"Supabase error {r.status_code}: {r.text[:200]}")
+            return None
+    except Exception as e:
+        st.error(f"Error Supabase: {e}")
+        return None
+
+def cargar_datos_db_cloud():
+    if CLOUD_MODE == "supabase":
+        rows = supabase_request("GET", "evaluaciones_periciales?select=*")
+        if rows is None:
+            return {}
+        data = {}
+        for row in rows:
+            token = row.get("token")
+            try:
+                dp = json_lib.loads(row.get("datos_persona")) if isinstance(row.get("datos_persona"), str) else (row.get("datos_persona") or {})
+            except:
+                dp = {}
+            try:
+                ev = json_lib.loads(row.get("evaluaciones")) if isinstance(row.get("evaluaciones"), str) else (row.get("evaluaciones") or {})
+            except:
+                ev = {}
+            data[token] = {
+                "estado": row.get("estado", "activa"),
+                "datos_persona": dp,
+                "evaluaciones": ev,
+                "ip_acceso": row.get("ip_acceso"),
+                "user_agent": row.get("user_agent"),
+                "hash_bloque": row.get("hash_bloque"),
+                "fecha_creacion": row.get("fecha_creacion"),
+                "fecha_actualizacion": row.get("fecha_actualizacion"),
+            }
+        return data
+    elif CLOUD_MODE == "npoint":
+        try:
+            r = requests.get(NPOINT_URL, timeout=10)
+            if r.status_code == 200:
+                j = r.json()
+                # npoint puede guardar {evaluaciones: {token: {...}}} o directo
+                if "evaluaciones" in j:
+                    return j["evaluaciones"]
+                return j
+        except Exception as e:
+            st.error(f"Error NPoint GET: {e}")
+        return {}
+    else:
+        # Fallback sqlite local (no sincroniza entre compus)
+        return cargar_datos_db()
+
+def guardar_token_db_cloud(token, info_dict):
+    if CLOUD_MODE == "supabase":
+        payload = {
+            "token": token,
+            "estado": info_dict.get("estado", "activa"),
+            "datos_persona": json_lib.dumps(info_dict.get("datos_persona"), ensure_ascii=False),
+            "evaluaciones": json_lib.dumps(info_dict.get("evaluaciones", {}), ensure_ascii=False),
+            "ip_acceso": info_dict.get("ip_acceso", "Desconocida"),
+            "user_agent": info_dict.get("user_agent", "Desconocido"),
+            "hash_bloque": info_dict.get("hash_bloque", ""),
+            "hash_anterior": info_dict.get("hash_anterior", "GENESIS"),
+            "fecha_actualizacion": datetime.now(TZ).isoformat()
+        }
+        # Upsert
+        headers = {
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates"
+        }
+        try:
+            requests.post(f"{SUPABASE_URL}/rest/v1/evaluaciones_periciales", headers=headers, json=payload, timeout=10)
+        except Exception as e:
+            st.error(f"Error guardando en Supabase: {e}")
+            guardar_token_db(token, info_dict)  # backup local
+    elif CLOUD_MODE == "npoint":
+        try:
+            # npoint: hay que hacer GET, modificar y POST completo (no soporta PATCH parcial)
+            r = requests.get(NPOINT_URL, timeout=10)
+            all_data = {}
+            if r.status_code == 200:
+                j = r.json()
+                all_data = j.get("evaluaciones", j) if isinstance(j, dict) else {}
+            all_data[token] = {
+                "estado": info_dict.get("estado", "activa"),
+                "datos_persona": info_dict.get("datos_persona"),
+                "evaluaciones": info_dict.get("evaluaciones", {}),
+                "ip_acceso": info_dict.get("ip_acceso"),
+                "user_agent": info_dict.get("user_agent"),
+                "hash_bloque": info_dict.get("hash_bloque"),
+                "fecha_actualizacion": datetime.now(TZ).isoformat(),
+                "fecha_creacion": info_dict.get("fecha_creacion") or datetime.now(TZ).isoformat()
+            }
+            # npoint guarda todo el json
+            requests.post(NPOINT_URL, json={"evaluaciones": all_data}, timeout=10)
+        except Exception as e:
+            st.error(f"Error NPoint POST: {e}")
+            guardar_token_db(token, info_dict)
+    else:
+        guardar_token_db(token, info_dict)
+
+def eliminar_token_db_cloud(token):
+    if CLOUD_MODE == "supabase":
+        supabase_request("DELETE", f"evaluaciones_periciales?token=eq.{token}")
+    elif CLOUD_MODE == "npoint":
+        try:
+            r = requests.get(NPOINT_URL, timeout=10)
+            if r.status_code == 200:
+                j = r.json()
+                all_data = j.get("evaluaciones", j)
+                if token in all_data:
+                    del all_data[token]
+                    requests.post(NPOINT_URL, json={"evaluaciones": all_data}, timeout=10)
+        except Exception as e:
+            st.error(f"Error borrando NPoint: {e}")
+    else:
+        eliminar_token_db(token)
+
+# Sobrescribe funciones originales para que todo el código use cloud
+# (mantenemos las originales como backup sqlite)
+cargar_datos_db_original = cargar_datos_db
+guardar_token_db_original = guardar_token_db
+eliminar_token_db_original = eliminar_token_db
+
+cargar_datos_db = cargar_datos_db_cloud
+guardar_token_db = guardar_token_db_cloud
+eliminar_token_db = eliminar_token_db_cloud
+# ==================== FIN PARCHE CLOUD SYNC V11 ====================
+
 
 def cargar_datos_db():
   conn = sqlite3.connect(DB_NAME, check_same_thread=False)
@@ -1634,6 +1992,14 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
             st.rerun()
 
     st.divider()
+    # Indicador de modo cloud
+    if CLOUD_MODE == "supabase":
+        st.success("☁️ Modo CLOUD: Supabase - Sincroniza entre compus")
+    elif CLOUD_MODE == "npoint":
+        st.success(f"☁️ Modo CLOUD: NPoint - Sincroniza entre compus | URL: {NPOINT_URL[:40]}...")
+    else:
+        st.warning("⚠️ Modo LOCAL SQLite - NO sincroniza entre compus. Configurá NPOINT_URL o SUPABASE en Secrets para multi-compu. Ver instrucciones abajo.")
+
     st.subheader("1️⃣ Crear nuevo protocolo")
     st.caption("El evaluado completará sus datos (nombre, DNI, localidad) y consentimiento. Vos solo generás el código.")
 

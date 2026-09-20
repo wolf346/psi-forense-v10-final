@@ -1881,7 +1881,12 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
             col_texto, col_btn_ver, col_actualizar, col_borrar = st.columns([3.5, 1.8, 1.2, 1.0])
 
             with col_texto:
-                if evals:
+                estado_actual = info.get("estado", "activa")
+                if estado_actual in ["finalizada", "cerrada", "completada"]:
+                    nombre_str = f"{persona.get('nombre','')} {persona.get('apellido','')}".strip() or "Evaluado"
+                    tests_realizados = ", ".join(list(evals.keys())) if evals else "sin tests"
+                    st.markdown(f"🔒 **Código:** `{clave}` | **{nombre_str}** | {tests_realizados} | **CERRADO**")
+                elif evals:
                     nombre_str = f"{persona.get('nombre','')} {persona.get('apellido','')}".strip() or "Evaluado"
                     tests_realizados = ", ".join(list(evals.keys()))
                     st.markdown(f"🔴 **Código:** `{clave}` | **{nombre_str}** | **{tests_realizados}**")
@@ -1910,6 +1915,15 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
                     if f"modal_ver_{clave}" in st.session_state:
                         del st.session_state[f"modal_ver_{clave}"]
                     eliminar_token_db(clave)
+                    st.rerun()
+            
+            # Botón reactivar si está finalizado
+            estado_actual = info.get("estado", "activa")
+            if estado_actual in ["finalizada", "cerrada", "completada"]:
+                if st.button("♻️ Reactivar", key=f"btn_reactivar_{clave}", use_container_width=True):
+                    info["estado"] = "activa"
+                    guardar_token_db(clave, info)
+                    st.success(f"Token {clave} reactivado")
                     st.rerun()
 
             if st.session_state.get(f"modal_ver_{clave}", False):
@@ -2113,6 +2127,18 @@ else:
         st.stop()
 
     datos_token = datos_db[token_actual]
+    # --- BLOQUEO DE RE-USO DE TOKEN (un solo uso) ---
+    estado_token = datos_token.get("estado", "activa")
+    if estado_token in ["finalizada", "cerrada", "completada", "finalizado", "cerrado"]:
+        st.error(f"🔒 El protocolo {token_actual} ya fue cerrado y no puede reutilizarse por seguridad forense.")
+        st.warning("Por inalterabilidad de la cadena de custodia, cada token es de un solo uso. Pedile al perito que te genere uno nuevo.")
+        if st.button("Borrar código y solicitar uno nuevo"):
+            st.session_state["token_actual"] = None
+            st.session_state["test_enviado"] = False
+            st.query_params.clear()
+            st.rerun()
+        st.stop()
+    
     dp = datos_token.get("datos_persona") or {}
     datos_completos = all([dp.get('nombre'), dp.get('apellido'), dp.get('edad'), dp.get('dni'), dp.get('localidad'), dp.get('consentimiento')])
 
@@ -2152,10 +2178,17 @@ else:
                 st.session_state["test_enviado"] = False
                 st.rerun()
         with c2:
-            if st.button("🚪 Salir", use_container_width=True):
+            if st.button("🚪 Salir y CERRAR protocolo (un solo uso)", use_container_width=True, type="primary"):
+                # Cerrar token por seguridad - no se podrá volver a entrar
+                datos_token["estado"] = "finalizada"
+                try:
+                    guardar_token_db(token_actual, datos_token)
+                except:
+                    pass
                 st.session_state["token_actual"] = None
                 st.session_state["test_enviado"] = False
                 st.query_params.clear()
+                st.success("Protocolo cerrado correctamente. Ya no podrás volver a entrar con este código.")
                 st.rerun()
         st.stop()
 

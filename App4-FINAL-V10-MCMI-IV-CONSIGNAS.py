@@ -9,8 +9,34 @@ from zoneinfo import ZoneInfo
 from pathlib import Path
 import streamlit as st
 
-st.set_page_config(page_title="Evaluaciones Psicologicas Forenses - V10 MCMI-IV + Consignas", page_icon="⚖️", layout="wide")
-hide_style = """<style>#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}</style>"""
+st.set_page_config(page_title="Evaluaciones Psicologicas Forenses - V21 EGEP-5 + MCMI-IV", page_icon="⚖️", layout="wide")
+hide_style = """
+<style>
+#MainMenu {visibility: hidden;} 
+footer {visibility: hidden;} 
+header {visibility: hidden;}
+
+/* AUMENTAR LETRA PANEL LATERAL */
+[data-testid="stSidebar"] h1 {
+    font-size: 28px !important;
+    font-weight: 800 !important;
+}
+[data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+    font-size: 22px !important;
+}
+[data-testid="stSidebar"] p, [data-testid="stSidebar"] label, [data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p {
+    font-size: 18px !important;
+    line-height: 1.4 !important;
+}
+[data-testid="stSidebar"] .stRadio label {
+    font-size: 19px !important;
+    font-weight: 600 !important;
+}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
+    font-size: 18px !important;
+}
+</style>
+"""
 st.markdown(hide_style, unsafe_allow_html=True)
 
 CONTRASEÑA_MAESTRA = "MiClavePericial2026"
@@ -201,10 +227,9 @@ TESTS_DISPONIBLES = [
     "LSB-50 (Listado de Sintomas Breve)",
     "MCMI-III (Inventario Clinico Multiaxial de Millon-III)",
     "MCMI-IV (Inventario Clinico Multiaxial de Millon-IV) - VIGENTE DSM-5",
-    "CUIDA (Evaluacion de Adoptantes, Cuidadores, Tutores y Mediadores)",
+    "EGPT-5 / EGEP-5 (Evaluacion Global del Estres Postraumatico - DSM-5 - CON BAREMOS)",
     "STAI (Cuestionario de Ansiedad Estado-Rasgo)",
     "BDI-II (Inventario de Depresion de Beck)",
-    "PAI (Inventario de Evaluacion de la Personalidad)",
 ]
 
 # ==================== CONSIGNA OFICIAL POR TEST - PARA HOJA DEL EVALUADO ====================
@@ -227,12 +252,28 @@ CONSIGNA_TESTS = {
     - Opciones: V = Verdadero / F = Falso
     - Tiempo: 25-35 min
     """,
-    "CUIDA": """
-    **A continuación se le presentarán afirmaciones sobre su forma de ser y actuar en situaciones de cuidado.**
-    Indique su grado de acuerdo.
-    - 1 = En total desacuerdo | 2 = En desacuerdo | 3 = De acuerdo | 4 = Totalmente de acuerdo
-    Evalúa 14 variables relevantes para adopción, custodia y cuidado.
+    "EGEP-5": """
+    **EGPT-5 / EGEP-5 - Evaluación Global del Estrés Postraumático DSM-5 (Crespo, Gómez, et al.) - CON BAREMOS COLOMBIANOS Y ESPAÑOLES**
+
+    Instrumento con baremos oficiales para peritaje de daño psíquico.
+
+    **ESTRUCTURA:**
+    - Sección 1 (13-26): Caracterización del acontecimiento traumático (gravedad, temporalidad, miedo/indefensión/horror, tipo de amenaza)
+    - Sección 2 (27-49): Síntomas nucleares - Si/No + Grado de molestia 0-4 (Ninguna, Leve, Moderada, Grave, Extrema)
+      - Intrusión (27-31) max 20, Evitación (32-33) max 8, Alteraciones cognitivas (34-40) max 28, Activación (41-46) max 24, Total max 80
+      - Síntomas disociativos (47-49) especificador DSM-5
+    - Sección 3 (50-58): Temporalidad y funcionamiento (médico, medicación, laboral, social, familiar)
+
+    **BAREMOS:** Tabla A1 Baremos Colombianos (Pc 1-99) y Baremos Españoles - Permite convertir puntaje directo a percentil y nivel: No significativo, Leve, Moderado, Grave, Extremo.
+    Corte clínico sugerido: Total ≥20 y criterios DSM-5 completos.
+
+    Responda con sinceridad. No hay respuestas correctas o incorrectas para fines periciales.
     """,
+    "EGPT-5": """
+    **EGPT-5 / EGEP-5 - Evaluación Global del Estrés Postraumático DSM-5 - CON BAREMOS**
+    Ver EGEP-5. Mismo instrumento. Baremos incluidos para dictamen pericial.
+    """,
+
     "STAI": """
     **El STAI consta de dos partes:**
     **PARTE 1 - ESTADO (E):** Cómo se siente AHORA MISMO, en este momento. 0=Nada, 1=Algo, 2=Bastante, 3=Mucho
@@ -242,15 +283,11 @@ CONSIGNA_TESTS = {
     **En este cuestionario hay grupos de 4 afirmaciones.** Lea cada grupo y elija la frase que mejor describa cómo se ha sentido durante las últimas 2 semanas, incluyendo hoy.
     Si varios enunciados le parecen igualmente apropiados, elija el número más alto.
     """,
-    "PAI": """
-    **Lea cada afirmación y decida si es Falsa, Ligeramente Verdadera, Bastante Verdadera o Totalmente Verdadera.**
-    - F = Falso | LV = Ligeramente Verdadero | BV = Bastante Verdadero | TV = Totalmente Verdadero
-    """
 }
 
 TIEMPO_ESTIMADO = {
     "LSB-50": "5-8 min", "MCMI-III": "25-30 min", "MCMI-IV": "25-35 min",
-    "CUIDA": "35-45 min", "STAI": "8-10 min", "BDI-II": "5-7 min", "PAI": "40-55 min"
+    "EGEP-5": "15-20 min", "EGPT-5": "15-20 min", "STAI": "8-10 min", "BDI-II": "5-7 min"
 }
 
 def render_consigna(nombre_test_key):
@@ -265,8 +302,205 @@ def render_consigna(nombre_test_key):
     </div>
     """, unsafe_allow_html=True)
 
-# --- MCMI-IV 195 items placeholder (reemplazar con texto oficial licenciado si cuentas con licencia) ---
-ITEMS_MCMI_IV = [f"{i}. [MCMI-IV Item {i} - Texto oficial licenciado TEA/Pearson - 195 items DSM-5]" for i in range(1, 196)]
+# --- MCMI-IV 195 items - cargados desde preg_195.txt ---
+ITEMS_MCMI_IV = [
+    "1. Últimamente parece que me quedo sin fuerzas, incluso por la mañana.",
+    "2. Siempre me aseguro de que mi trabajo esté bien planeado y organizado.",
+    "3. Disfruto haciendo tantas cosas diferentes que no puedo decidir por cuál empezar.",
+    "4. Me preocupa que las personas de las que dependo me abandonen.",
+    "5. Aunque me da miedo hacer amistades, me gustaría tener más de las que tengo.",
+    "6. Raramente exteriorizo los pocos sentimientos que tengo.",
+    "7. Me cuesta mantener el equilibrio cuando camino.",
+    "8. Siempre busco oportunidades nuevas que me resulten emocionantes.",
+    "9. Algunas veces puedo ser bastante duro y desagradable con mi familia.",
+    "10. Me gusta ser el centro de atención.",
+    "11. De adolescente tuve muchos problemas por mi mal comportamiento en la escuela o instituto.",
+    "12. Me da miedo hacerme muy amigo de alguien porque podría acabar sintiéndome ridiculizado o avergonzado.",
+    "13. Noto que la gente está hablando de mí cuando paso a su lado.",
+    "14. Hace unos años comencé a sentirme un fracasado.",
+    "15. Si puedo elegir, prefiero hacer las cosas solo.",
+    "16. Últimamente he comenzado a sentir deseos de destrozar cosas.",
+    "17. Las cosas que hoy van bien no durarán mucho tiempo.",
+    "18. A veces, cuando las cosas empiezan a irme mal, me siento como si estuviera loco o fuera de la realidad.",
+    "19. Hago lo que quiero sin preocuparme de las consecuencias que tenga en los demás.",
+    "20. Afronto mis actividades diarias con mucha energía y persistencia.",
+    "21. Nunca perdono una ofensa ni olvido una situación embarazosa que alguien me haya causado.",
+    "22. Me siento extremadamente deprimido y triste gran parte del tiempo.",
+    "23. Siempre tiendo a culparme cuando las cosas van mal.",
+    "24. Hace mucho tiempo decidí que es mejor tener poca relación con la gente.",
+    "25. Tengo un problema con el alcohol que nos ha creado dificultades a mí y a mi familia.",
+    "26. Soy una persona socialmente muy reservada y tímida.",
+    "27. Muchas veces me siento muy alegre y animado sin ninguna razón.",
+    "28. En las últimas semanas me he sentido agotado sin ningún motivo en particular.",
+    "29. Mi tiempo es más valioso que el de los demás.",
+    "30. Siempre estoy buscando hacer nuevas amistades y conocer gente nueva.",
+    "31. Desde hace unas semanas estoy muy nervioso.",
+    "32. Simplemente, no he tenido la suerte que otras personas han tenido en la vida.",
+    "33. Las ideas me dan vueltas en la cabeza una y otra vez y no desaparecen.",
+    "34. Desde hace uno o dos años, al pensar sobre la vida, me siento muy triste y desanimado.",
+    "35. Intento hacerlo todo tan perfecto como sea posible.",
+    "36. Mi adicción a las drogas hizo que faltara al trabajo.",
+    "37. Mi estado de ánimo varía mucho de un día para otro.",
+    "38. Utilizo mi encanto para conseguir lo que quiero.",
+    "39. A menudo pienso que no merezco las cosas buenas que me pasan.",
+    "40. En el pasado me corté o autolesioné a propósito.",
+    "41. Tengo la sensación de que no duermo, y me levanto tan cansado como al acostarme.",
+    "42. A menudo dejo que los demás tomen por mí decisiones importantes.",
+    "43. Parece que pocas cosas me entristecen o me alegran.",
+    "44. A menudo tengo pensamientos extraños de los que desearía librarme.",
+    "45. Tengo muchos problemas para controlar el impulso de beber alcohol en exceso.",
+    "46. Hago amistades con mucha más facilidad que la mayoría de la gente que conozco.",
+    "47. Me da vergüenza el maltrato que sufrí cuando era joven.",
+    "48. Me parece muy bien que haya normas porque son una buena guía a seguir.",
+    "49. El año pasado aparecí en la portada de varias revistas.",
+    "50. A menudo me enfado con la gente que hace las cosas lentamente.",
+    "51. Me paso la vida preocupándome por una cosa u otra.",
+    "52. Siempre me pregunto cuál es la razón real de que alguien sea especialmente agradable conmigo.",
+    "53. Mis actividades cotidianas me animan y motivan.",
+    "54. Tengo muchas ideas que son avanzadas para los tiempos actuales.",
+    "55. Desde que sufrí una conmoción cerebral grave, ya no puedo concentrarme en nada.",
+    "56. Antes la gente decía que me interesaba y me entusiasmaba demasiado por muchas cosas.",
+    "57. He perdido el apetito por completo, y la mayoría de las noches tengo problemas para dormir.",
+    "58. Desde que era niño he ido perdiendo contacto con la realidad.",
+    "59. No puedo sentir mucho placer porque no creo que lo merezca.",
+    "60. Prefiero que me digan lo que tengo que hacer en lugar de decidir por mí mismo.",
+    "61. Consumir drogas me ha causado discusiones con mi familia.",
+    "62. El recuerdo de una experiencia muy perturbadora sigue presente en mis pensamientos y me obsesiona.",
+    "63. La mayoría de la gente me considera una persona prudente y cuidadosa.",
+    "64. Parece que he perdido el interés en la mayoría de las cosas que solía encontrar placenteras, como el sexo.",
+    "65. He tenido problemas con la ley un par de veces.",
+    "66. He tenido que ser muy duro con algunas personas para mantenerlas a raya.",
+    "67. Estoy muy seguro de mí mismo.",
+    "68. La gente intenta hacerme creer que estoy loco.",
+    "69. Me doy atracones de comida un par de veces a la semana.",
+    "70. Frecuentemente siento que no hay nada dentro de mí, como si estuviera vacío y hueco.",
+    "71. Siempre me ha resultado difícil dejar de sentirme deprimido y triste.",
+    "72. Cuando estoy solo y lejos de casa, a menudo comienzo a sentirme tenso y entro en pánico.",
+    "73. La gente dice que soy una persona formal y con valores morales.",
+    "74. Me cuesta controlar mi ira.",
+    "75. Soy una persona muy optimista.",
+    "76. Años después, aún tengo pesadillas sobre un hecho que fue una amenaza real para mi vida.",
+    "77. Me parece que necesito que alguien me oriente para hacer las cosas.",
+    "78. Recientemente he pensado muy en serio en quitarme la vida.",
+    "79. Hay mala gente que intenta llevarse el mérito de lo que he hecho o pensado.",
+    "80. Últimamente estoy destrozado.",
+    "81. Consumir drogas puede ser irresponsable, pero en el pasado las he necesitado.",
+    "82. Soy una persona muy variable, cambio de opinión y sentimientos continuamente.",
+    "83. Se me da muy bien inventar excusas cuando me meto en problemas.",
+    "84. Cuando estoy en una fiesta, nunca me aíslo de los demás.",
+    "85. Parece que echo a perder las buenas oportunidades que se cruzan en mi camino.",
+    "86. Algunas veces me provoco el vómito después de comer.",
+    "87. Soy una persona especial, así que no me importa lo que piensen los demás.",
+    "88. Observo atentamente a mi familia para saber en quién se puede confiar y en quién no.",
+    "89. Ciertos pensamientos vuelven a mi mente una y otra vez.",
+    "90. Pocas cosas en la vida me resultan placenteras.",
+    "91. Me siento agitado y me cuesta conciliar el sueño porque tengo recuerdos dolorosos dando vueltas en mi cabeza.",
+    "92. A menudo me pierdo en mis pensamientos y me olvido de lo que está pasando a mi alrededor.",
+    "93. Nunca he podido dejar de sentir que no valgo nada para los demás.",
+    "94. Tengo un problema con la bebida que he tratado de solucionar sin éxito.",
+    "95. Alguien ha estado intentando controlar mi mente.",
+    "96. La mayoría de las personas que han triunfado han tenido suerte o han sido deshonestas.",
+    "97. A menudo irrito a la gente dándoles órdenes.",
+    "98. No he visto un coche en los últimos diez años.",
+    "99. Siempre me siento cohibido y tenso en las reuniones sociales.",
+    "100. Creo que provoco situaciones en las que resulto herido o me siento rechazado.",
+    "101. Me siento profundamente deprimido sin saber por qué.",
+    "102. La gente dice que soy una persona delgada, pero creo que mis músculos y mi trasero son demasiado grandes.",
+    "103. A menudo disfruto provocando una discusión o una pelea.",
+    "104. Tengo mucho cuidado en mantener mi vida como algo privado, para que nadie pueda aprovecharse de mí.",
+    "105. El consumo de drogas me ha causado muchos problemas.",
+    "106. A menudo me echan la culpa por cosas de las que no soy responsable.",
+    "107. Pensar en el futuro al comienzo de cada día me hace sentir extremadamente deprimido.",
+    "108. A veces las personas se molestan conmigo porque dicen que hablo mucho o demasiado deprisa.",
+    "109. Yo nunca podría arreglármelas solo.",
+    "110. Mi cabeza no funciona bien desde que hace unos años tuve una lesión cerebral.",
+    "111. Me siento solo y vacío la mayor parte del tiempo.",
+    "112. La gente se burla de mí a mis espaldas.",
+    "113. Últimamente sudo mucho y me siento muy tenso.",
+    "114. Estas últimas semanas me he sentido cada vez más triste.",
+    "115. Me enfurezco rápidamente con la gente que me molesta.",
+    "116. A veces no he podido pasar el día sin tomar drogas.",
+    "117. Me gusta mucho coquetear.",
+    "118. Ya no tengo energía para concentrarme en mis responsabilidades diarias.",
+    "119. Mis emociones no parecen ser tan intensas como las del resto de la gente.",
+    "120. Me siento débil y cansado la mayor parte del tiempo.",
+    "121. Ideas extrañas entran en mi mente, dan vueltas y vueltas en mi cabeza, y no desaparecen.",
+    "122. Los demás tienen oportunidades que yo no tengo.",
+    "123. Repito ciertos comportamientos una y otra vez, algunas veces para reducir mi ansiedad y otras para evitar que pase algo malo.",
+    "124. He tomado medicación que no me habían recetado.",
+    "125. Mi vida actual todavía se ve afectada por recuerdos e imágenes de algo terrible que me pasó.",
+    "126. A menudo echo a perder las cosas buenas que me ocurren.",
+    "127. Voces malvadas intentan apoderarse de mi mente.",
+    "128. Me siento muy culpable cuando pierdo el control.",
+    "129. Mi entusiasmo por el trabajo que hago nunca disminuye.",
+    "130. Supongo que no soy diferente de mis padres ya que, en cierto modo, me he convertido en un alcohólico.",
+    "131. Últimamente tengo que pensar las cosas una y otra vez sin ningún motivo.",
+    "132. Animo a los demás a que admiren lo que digo o hago.",
+    "133. Dejo de hacer cosas si tengo que hacerlas solo.",
+    "134. He intentado suicidarme.",
+    "135. Soy una persona miedosa y reservada.",
+    "136. A las personas que supuestamente son mis amigos les gustaría hacerme daño.",
+    "137. A menudo me dejo llevar por la rabia y luego me siento muy culpable.",
+    "138. A menudo oigo cosas con tanta claridad que me molesta.",
+    "139. Aparte de mi familia, tengo muy pocos amigos íntimos.",
+    "140. La desorganización me hace sentir muy incómodo.",
+    "141. A menudo critico mucho a la gente que me irrita.",
+    "142. Tengo muchas cualidades que los demás querrían tener.",
+    "143. Terribles acontecimientos de mi pasado reaparecen obsesivamente en mis pensamientos y sueños.",
+    "144. Sé que he gastado más dinero en droga del que debería.",
+    "145. A menudo, y antes de darme cuenta, me pongo a gritar enfadado a mis amigos y familiares.",
+    "146. Me preocupa que mi cuerpo se desgaste rápidamente.",
+    "147. Está bien burlar la ley si es poco probable que te atrapen.",
+    "148. Creo que hay una conspiración contra mí.",
+    "149. Soy una persona solitaria y no me molesta.",
+    "150. Todavía me aterrorizo cuando pienso en una experiencia traumática que tuve hace años.",
+    "151. Últimamente me he sentido muy culpable porque ya no soy capaz de hacer nada bien.",
+    "152. Los castigos nunca me impidieron hacer lo que quería.",
+    "153. Pocas veces creo lo que la gente me dice.",
+    "154. Soy una persona muy sociable y extrovertida.",
+    "155. Me entusiasmo con casi todo lo que hago.",
+    "156. Estoy confundido sobre quién soy.",
+    "157. Odio pensar en el maltrato que sufrí en mi infancia.",
+    "158. Nunca infringiría la ley, aunque pudiera salir impune.",
+    "159. Algunos miembros de mi familia dicen que soy egoísta y que solo pienso en mí.",
+    "160. En el último año he cruzado el Atlántico en avión 30 veces.",
+    "161. Beber alcohol me ayuda cuando me siento deprimido.",
+    "162. Preferiría seguir a alguien antes que ser yo el líder.",
+    "163. A menudo me vienen ideas a la mente mucho más rápido de lo que puedo expresarlas.",
+    "164. A menudo me siento tan mal que quiero hacerme daño de verdad.",
+    "165. Algunas personas dicen que soy extraño o raro.",
+    "166. A veces encuentro consuelo en mi sufrimiento.",
+    "167. A menudo creo que me han tratado injustamente.",
+    "168. Muestro mi enfado rápidamente a las personas que no están de acuerdo conmigo.",
+    "169. Casi siempre me siento culpable sin ninguna razón aparente.",
+    "170. Desde hace algún tiempo me siento triste y deprimido y parece que no consigo animarme.",
+    "171. Sé cómo seducir a la gente.",
+    "172. Siempre he tenido que estar atento a la gente que intenta engañarme.",
+    "173. Siempre estoy dispuesto a aceptar lo que a los demás les gustaría hacer.",
+    "174. Afronto todos los retos de la vida con una actitud valiente y enérgica.",
+    "175. Nunca siento que tenga algo interesante que aportar a una conversación.",
+    "176. Si mi medicamento no me hace efecto, es probable que lo tome con más frecuencia o aumente la dosis.",
+    "177. En muchos periodos de mi vida he estado tan animado y he consumido tanta energía que luego me he sentido muy bajo de ánimo.",
+    "178. A menudo me siento muy infeliz conmigo mismo.",
+    "179. No me gusta cambiar mi rutina.",
+    "180. No necesito tener amigos íntimos como tienen los demás.",
+    "181. A veces me ha reconfortado herirme físicamente.",
+    "182. Mucha gente ha estado espiando mi vida privada durante años.",
+    "183. Cuando quiero, se me da bastante bien engañar a la gente.",
+    "184. Incluso cuando las cosas van bien, creo que pronto irán mal.",
+    "185. Se me da muy bien animar y motivar a los demás.",
+    "186. Estoy dispuesto a pasar hambre para estar aún más delgado de lo que estoy.",
+    "187. A menudo estoy irritable y de mal humor.",
+    "188. Siempre intento acabar mi trabajo antes de dedicar tiempo a actividades de ocio.",
+    "189. Solo las personas excepcionales pueden comprender mis capacidades.",
+    "190. Realmente no entiendo los sentimientos humanos como los entienden los demás.",
+    "191. Demasiadas normas impiden que haga lo que quiero.",
+    "192. A veces siento que merezco ser infeliz.",
+    "193. He estado abatido y triste gran parte de mi vida.",
+    "194. Tiendo a estar de acuerdo con las opiniones de los demás.",
+    "195. Evito la mayoría de las situaciones sociales porque creo que la gente me rechazará."
+]
+
 
 
 
@@ -586,279 +820,141 @@ OPCIONES_MCMI = ["Verdadero", "Falso"]
 
 # OPCIONES_MMPI = ["Verdadero", "Falso"] ELIMINADO
 
-ITEMS_CUIDA = [
-    "1. Tengo problemas para dormir.",
-    "2. Estoy satisfecho de cómo soy.",
-    "3. Si alguien me insulta intento averiguar por qué lo hace.",
-    "4. A veces juzgo a los demás sin conocerles.",
-    "5. Me disgusta mi aspecto físico.",
-    "6. Tengo cambios de humor con bastante facilidad.",
-    "7. Me gusta reunirme con mis amigos y conversar.",
-    "8. Siempre hago lo que digo.",
-    "9. Hago todo lo posible por salirme con la mía.",
-    "10. Me cuesta mucho participar en reuniones de grupo.",
-    (
-        "11. Ya no me resulta doloroso pensar en las cosas a las que he tenido"
-        " que renunciar con los años."
-    ),
-    "12. Cuando voy de viaje evito relacionarme con otros viajeros.",
-    "13. Me cuesta aceptar que mi relación de pareja no sea como al principio.",
-    (
-        "14. Me altero fácilmente cuando algo inesperado perturba mi vida"
-        " cotidiana."
-    ),
-    "15. Los sentimientos de los demás no me preocupan.",
-    (
-        "16. Abandono fácilmente las tareas cuando me encuentro con ciertas"
-        " dificultades."
-    ),
-    "17. Me pongo nervioso cuando alguien me halaga.",
-    "18. Habitualmente compro cosas que no necesito sólo porque me apetece.",
-    (
-        "19. Me siento angustiado cuando en mi vida ocurre algo que no tengo"
-        " previsto."
-    ),
-    (
-        "20. Si presto algo y me lo devuelven estropeado, soy incapaz de decir"
-        " nada."
-    ),
-    (
-        "21. Tan pronto me siento lleno de vitalidad como profundamente"
-        " cansado."
-    ),
-    "22. Cuando alguien me critica injustamente me defiendo dialogando.",
-    (
-        "23. Creo que las despedidas me resultan más difíciles que al resto de"
-        " las personas."
-    ),
-    (
-        "24. A veces me entusiasmo tanto con alguna idea nueva que no pienso en"
-        " los inconvenientes que pueda tener."
-    ),
-    "25. Me siento incómodo cuando alguien se acerca demasiado.",
-    "26. Tengo tendencia a enojarme cuando las cosas no me salen bien.",
-    (
-        "27. Las dificultades de otros países no nos incumben, es algo que"
-        " deben solucionárselo ellos."
-    ),
-    "28. Soy una persona a la que los demás utilizan.",
-    "29. Me es fácil conectar con la gente.",
-    "30. No me preocupa ser rechazado por los demás.",
-    "31. Me preocupa que los demás no me quieran.",
-    "32. Cuando surge un problema prefiero que lo resuelva otro.",
-    "33. Me cuesta mucho pedir favores.",
-    (
-        "34. Cuando estoy ocupado en algo acepto con tranquilidad cualquier"
-        " interrupción."
-    ),
-    "35. A veces pienso que no valgo para nada.",
-    "36. En general, me gusta la gente.",
-    "37. Nunca bebo líquidos.",
-    "38. Me encanta organizar fiestas con mis amigos.",
-    "39. En alguna ocasión me he quedado con algo que no era de mi propiedad.",
-    "40. No me cuesta trabajo asumir los cambios de mi cuerpo.",
-    "41. Cuando estoy solo me siento triste.",
-    (
-        "42. Antes de tomar una decisión suelo tener en cuenta todas las"
-        " posibilidades."
-    ),
-    (
-        "43. Si mi hijo adolescente me propusiera algo excepcional, en principio"
-        " estaría dispuesto a escucharle."
-    ),
-    (
-        "44. Considero que tengo menos cualidades que el resto de las"
-        " personas."
-    ),
-    "45. Necesito sentirme arropado por alguien.",
-    "46. Es muy raro que algo o alguien me haga perder los estribos.",
-    "47. Conecto fácilmente con los sentimientos de las personas.",
-    "48. Me cuesta mucho desprenderme de los objetos de mi infancia.",
-    "49. No me importa lo que piensen los demás sobre mis opiniones.",
-    (
-        "50. El que haya organizaciones que presten ayuda a otros países me"
-        " parece un gasto innecesario."
-    ),
-    "51. Suelo reaccionar sin pensar mucho en lo que hago.",
-    (
-        "52. Ante situaciones conceptuales o peligrosas me altero menos que"
-        " los demás."
-    ),
-    "53. No me suelo alterar por pequeñeces.",
-    "54. Sufro cuando deseo tener o comprar algo que no puedo.",
-    (
-        "55. Solo me interesan aquellas cosas que están relacionadas con mi"
-        " campo de interés."
-    ),
-    (
-        "56. Si en un restaurante recibo un mal servicio hago la reclamación"
-        " oportuna."
-    ),
-    "57. Suelo reconocer las cualidades positivas que tengo.",
-    "58. No me cuesta comprometerme emocionalmente con otras personas.",
-    "59. Acepto con naturalidad que alguien diga cosas positivas de mí.",
-    "60. Me cuesta comprender otras religiones.",
-    (
-        "61. Si alguien me atrae encuentro la forma de establecer comunicación"
-        " con él."
-    ),
-    "62. Hago las cosas sin pararme a pensar.",
-    "63. Me cuesta mucho percibir las cualidades positivas que tengo.",
-    "64. Suelo hablar sin pensar demasiado lo que digo.",
-    (
-        "65. Me siento mal cuando no tengo relaciones afectivas duraderas con"
-        " otras personas."
-    ),
-    "66. Sé controlar mis sentimientos y no dejo que estos me desborden.",
-    "67. No me importa lo que los demás piensen de mí.",
-    "68. Me considero capaz de hacer las cosas tan bien como los demás.",
-    "69. Ni en situaciones muy tensas me irrito.",
-    "70. Me da igual que se mueran plantas o animales si yo no los he cuidado.",
-    "71. Me incomoda ver llorar a una persona.",
-    "72. Pienso detenidamente las cosas antes de hacerlas.",
-    "73. Me enfado conmigo mismo cuando fallo en algo.",
-    "74. Me asustan los cambios de la vida cotidiana.",
-    "75. No me resulta fácil entablar conversación con desconocidos.",
-    "76. Es imposible que me enfade con nadie.",
-    "77. Me angustia que una relación afectiva importante se pueda romper.",
-    "78. Me desanimo fácilmente ante los imprevistos.",
-    "79. Comprendo fácilmente el punto de vista de los demás.",
-    "80. Suelo decir siempre la verdad.",
-    "81. Ante situaciones difíciles me mantengo sereno.",
-    "82. Si un amigo/a me pide ayuda dejo lo que estoy haciendo y acudo.",
-    "83. Me adapto con facilidad a los cambios de planes.",
-    "84. Intento ponerme en el lugar de las personas que sufren.",
-    "85. Si cometo un error prefiero admitirlo que buscar excusas.",
-    "86. Siento que los demás valoran mi trabajo y mi esfuerzo.",
-    "87. Me cuesta superar la pérdida de seres queridos.",
-    "88. No me molesta que me lleven la contraria.",
-    "89. Pienso bien las consecuencias antes de actuar.",
-    "90. Me resulta fácil expresar mis sentimientos a las personas que quiero.",
-    "91. Acepto las normas aunque a veces no esté de acuerdo.",
-    "92. Tengo confianza en mis capacidades para solucionar problemas.",
-    "93. Evito las discusiones innecesarias.",
-    "94. Me resulta difícil pedir perdón cuando me equivoco.",
-    "95. Muestro paciencia ante las dificultades de los demás.",
-    "96. Me esfuerzo por entender las opiniones distintas a la mía.",
-    "97. Respeto las decisiones de los demás aunque no las comparta.",
-    "98. Me siento seguro al tomar decisiones importantes.",
-    "99. Mantengo la calma aunque las cosas salgan mal.",
-    "100. Sé escuchar atentamente cuando alguien me habla.",
-    "101. Me cuesta controlar el malestar cuando me contradicen.",
-    "102. Intento resolver los conflictos buscando el beneficio de todos.",
-    "103. Siento satisfacción cuando ayudo a los demás.",
-    "104. Acepto mis limitaciones personales sin frustrarme.",
-    "105. Me cuesta adaptarme a nuevas situaciones laborales o personales.",
-    (
-        "106. Trato con respeto a todas las personas independientemente de su"
-        " condición."
-    ),
-    "107. Controlo mis impulsos cuando me siento molesto.",
-    "108. Sé decir que no sin sentir culpa.",
-    "109. Me preocupa el bienestar de los niños y personas vulnerables.",
-    "110. Acepto las críticas si son constructivas.",
-    "111. Me resulta fácil ponerme en el lugar de los niños.",
-    "112. Sé mantener los límites con firmeza y afecto.",
-    "113. No me dejo llevar por la ira ante las provocaciones.",
-    "114. Me considero una persona tolerante.",
-    "115. Sé manejar el estrés en momentos de crisis.",
-    "116. Acepto a las personas tal como son.",
-    "117. Me cuesta pedir ayuda cuando me siento desbordado.",
-    "118. Expreso lo que pienso con claridad y respeto.",
-    "119. Me preocupa la injusticia social.",
-    "120. Mantengo el compromiso asumido a pesar de las dificultades.",
-    "121. Me resulta fácil establecer un vínculo de confianza.",
-    "122. Admito mis equivocaciones frente a los niños o subordinados.",
-    "123. Mantengo una actitud positiva ante la vida.",
-    "124. Sé reaccionar con flexibilidad ante imprevistos graves.",
-    "125. Entiendo la importancia del afecto en la educación.",
-    "126. Evito el uso de la violencia verbal o física en cualquier circunstancia.",
-    "127. Me siento capaz de cuidar y proteger a otros.",
-    "128. Sé perdonar las faltas de los demás.",
-    "129. Me comunico con claridad y paciencia.",
-    "130. Acepto que los demás tengan prioridades distintas a las mías.",
-    "131. Mantengo el autocontrol cuando me siento presionado.",
-    (
-        "132. Me involucro de forma activa en la resolución de problemas"
-        " comunitarios."
-    ),
-    "133. Reconozco el esfuerzo de los demás y los felicito.",
-    "134. Sé gestionar mis frustraciones sin desquitarme con otros.",
-    (
-        "135. Muestro empatía hacia las personas que están pasando por momentos"
-        " tristes."
-    ),
-    "136. Acepto los cambios en las rutinas con naturalidad.",
-    (
-        "137. Sé poner los intereses del grupo o familia por encima de los mías"
-        " cuando es necesario."
-    ),
-    "138. Mantengo la serenidad durante discusiones acaloradas.",
-    "139. Me resulta fácil expresar ternura.",
-    "140. No me guardo rencor por ofensas pasadas.",
-    "141. Busco el diálogo antes de tomar medidas drásticas.",
-    "142. Muestro flexibilidad mental ante posturas opuestas.",
-    "143. Me siento preparado para asumir responsabilidades de cuidado.",
-    "144. Respeto el ritmo de aprendizaje o desarrollo de cada persona.",
-    "145. Sé transmitir seguridad y tranquilidad a quienes me rodean.",
-    "146. Acepto con calma las equivocaciones ajenas.",
-    "147. Mantengo el entusiasmo a pesar de los obstáculos.",
-    "148. Me adapto sin dificultad a entornos nuevos.",
-    "149. Valoro la honestidad por encima de todo.",
-    "150. Sé pedir disculpas si he respondido de forma inadecuada.",
-    "151. Comprendo el impacto de mis acciones en los demás.",
-    "152. Muestro disponibilidad para escuchar las necesidades ajenas.",
-    "153. No me desespero cuando las respuestas no son inmediatas.",
-    "154. Acepto la diversidad de pensamiento en mi entorno.",
-    "155. Controlo mis temores ante situaciones desconocidas.",
-    "156. Muestro afecto sincero hacia los niños.",
-    "157. Sé poner límites claros sin perder la calma.",
-    "158. Respeto el tiempo de los demás.",
-    "159. Acepto con madurez las pérdidas o fracasos.",
-    "160. Busco soluciones constructivas ante los dilemas cotidianos.",
-    "161. Me resulta sencillo ponerme en el lugar de alguien que sufre.",
-    "162. Mantengo la coherencia entre lo que digo y hago.",
-    (
-        "163. Sé mantener la distancia adecuada sin ser distante ni"
-        " invasivo."
-    ),
-    "164. Me muestro accesible ante las demandas de ayuda.",
-    "165. Sé mantener la paz interior en momentos de tensión.",
-    "166. Acepto las reglas de convivencia con agrado.",
-    "167. Me siento capaz de sostener emocionalmente a otro.",
-    "168. Muestro paciencia ante las rabieta o berrinches infantiles.",
-    "169. Respeto el intimidad y el espacio ajeno.",
-    "170. Mantengo una actitud de colaboración constante.",
-    (
-        "171. Sé adaptarme a las exigencias del entorno sin perder mi"
-        " identidad."
-    ),
-    "172. Acepto que las cosas no siempre salgan según lo previsto.",
-    "173. Muestro un interés sincero por las emociones de las personas.",
-    "174. Sé manejar la presión de tiempo sin perder los nervios.",
-    "175. Me comunico de manera asertiva y pausada.",
-    "176. Acepto las diferencias individuales con agrado.",
-    "177. Mantengo el equilibrio emocional frente al conflicto.",
-    "178. Muestro responsabilidad en el cuidado de terceros.",
-    "179. Sé motivar a los demás en momentos difíciles.",
-    "180. Respeto la autoridad legítima.",
-    "181. Acepto mis propios errores sin buscar culpables.",
-    "182. Sé escuchar sin interrumpir.",
-    "183. Muestro disposición para el trabajo cooperativo.",
-    "184. Mantengo la objetividad en las evaluaciones personales.",
-    "185. Acepto con gratitud la ayuda que me brindan.",
-    "186. Sé brindar protección afectiva y física.",
-    "187. Muestro comprensión ante las debilidades ajenas.",
-    "188. Mantengo la firmeza en mis valores fundamentales.",
-    "189. Sé dar respuestas serenas en situaciones críticas.",
+
+# ==================== EGPT-5 / EGEP-5 - EVALUACION GLOBAL DEL ESTRES POSTRAUMATICO DSM-5 - CON BAREMOS ====================
+ITEMS_EGEP5_ACONTECIMIENTO = [
+    "13. Valore la gravedad del acontecimiento: Leve, Moderada, Grave, Extrema",
+    "14. ¿Cuándo sufrió ese acontecimiento por primera vez? (Infancia/adolescencia, Hace >3 meses, Hace >1 mes y <3 meses, Último mes)",
+    "15. Ese acontecimiento ocurrió... (una única ocasión, varias ocasiones, de forma repetida/reiterada)",
+    "16. Durante ese acontecimiento, ¿se sintió con mucho miedo? (Sí/No)",
+    "17. Durante ese acontecimiento, ¿se sintió indefenso? (Sí/No)",
+    "18. Durante ese acontecimiento, ¿se sintió horrorizado? (Sí/No)",
+    "19. Ese acontecimiento supuso una lesión grave para usted (Sí/No)",
+    "20. Ese acontecimiento supuso lesión grave o muerte de otras personas (Sí/No)",
+    "21. Ese acontecimiento supuso amenaza para su integridad física (Sí/No)",
+    "22. Ese acontecimiento supuso amenaza para la integridad física de otras personas (Sí/No)",
+    "23. Ese acontecimiento supuso amenaza para su vida (Sí/No)",
+    "24. Ese acontecimiento supuso amenaza para la vida de otras personas (Sí/No)",
+    "25. Ese acontecimiento supuso escenas desagradables (Sí/No)",
+    "26. Ese acontecimiento supuso amenazas para su dignidad personal, honor o estabilidad emocional (Sí/No)",
 ]
 
-OPCIONES_CUIDA = {
-    1: "1 - Completamente en desacuerdo",
-    2: "2 - En desacuerdo",
-    3: "3 - De acuerdo",
-    4: "4 - Completamente de acuerdo",
+ITEMS_EGEP5_SINTOMAS = [
+    "27. Tiene recuerdos desagradables y repetitivos sobre el acontecimiento (imágenes o pensamientos) [Intrusión]",
+    "28. Tiene sueños desagradables y repetitivos sobre el acontecimiento [Intrusión]",
+    "29. Hay momentos en que actúa o se siente como si estuviera viviendo de nuevo el acontecimiento [Intrusión]",
+    "30. Siente malestar (nerviosismo, inquietud...) cuando algo le recuerda el acontecimiento [Intrusión]",
+    "31. Los recuerdos sobre el acontecimiento hacen que tiemble, sude, se le acelere el corazón... [Intrusión]",
+    "32. Intenta evitar o ahuyentar pensamientos, sentimientos o conversaciones relacionadas con el acontecimiento [Evitación]",
+    "33. Intenta evitar actividades, lugares o personas que le recuerdan el acontecimiento [Evitación]",
+    "34. Tiene dificultades para recordar aspectos importantes del acontecimiento [Cognición]",
+    "35. Siente que no puede confiar en los demás [Cognición]",
+    "36. Se ha sentido culpable por algo que hizo o dejó de hacer durante el acontecimiento [Cognición]",
+    "37. Tiene constantemente sentimientos negativos (miedo, horror, ira, culpa, vergüenza...) [Cognición]",
+    "38. Ha disminuido su interés o el placer en cosas con las que solía disfrutar [Cognición]",
+    "39. Tiene sensación de distancia o alejamiento de los demás [Cognición]",
+    "40. Tiene dificultades para experimentar ciertas emociones (amor, felicidad, ternura, deseo sexual) [Cognición]",
+    "41. Se siente irritable o tiene ataques de ira [Activación]",
+    "42. Lleva a cabo conductas que sabe que son peligrosas o que pueden causarle daño [Activación]",
+    "43. Está en constante estado de alerta o vigilancia (siempre en guardia) [Activación]",
+    "44. Se sobresalta o asusta fácilmente [Activación]",
+    "45. Tiene dificultades para concentrarse [Activación]",
+    "46. Tiene dificultades para dormirse o mantener el sueño [Activación]",
+    "47. Hay momentos en que se siente como si estuviera fuera de su cuerpo, como si se viera desde fuera [Disociativo]",
+    "48. Hay momentos en que se siente fuera de contacto con lo que sucede a su alrededor (como en una nube o sueño) [Disociativo]",
+    "49. Hay momentos en que siente que las cosas que pasan a su alrededor son irreales o muy extrañas [Disociativo]",
+]
+
+ITEMS_EGEP5_TEMPORALIDAD = [
+    "50. ¿Desde cuándo experimenta estos problemas? (<1 mes, >1 mes y <3 meses, >3 meses)",
+    "51. ¿Cuánto tiempo tardaron en aparecer estos problemas tras el acontecimiento? (Nada más ocurrir, 6 primeros meses, 6 meses o más después - presentación demorada)",
+]
+
+ITEMS_EGEP5_FUNCIONAMIENTO = [
+    "52. ¿Ha consultado al médico por alguno de estos problemas? (Sí/No)",
+    "53. ¿Ha tomado medicación por alguno de estos problemas? (Sí/No)",
+    "54. ¿Ha tomado alcohol o drogas para hacer frente a estos problemas? (Sí/No)",
+    "55. ¿Ha afectado negativamente su vida laboral/académica? (Sí/No)",
+    "56. ¿Ha afectado negativamente sus relaciones sociales? (Sí/No)",
+    "57. ¿Ha afectado negativamente sus relaciones familiares o de pareja? (Sí/No)",
+    "58. ¿Ha afectado a algún otro aspecto importante de su vida? (Sí/No) - Especificar",
+]
+
+ITEMS_EGSR = ITEMS_EGEP5_SINTOMAS
+ITEMS_EGSR_DISOCIATIVOS = ITEMS_EGEP5_SINTOMAS[20:23]
+ITEMS_EGSR_DISFUNCIONALIDAD = ITEMS_EGEP5_FUNCIONAMIENTO
+
+OPCIONES_EGEP5_SINO = ["No", "Sí"]
+OPCIONES_EGEP5_GRAVEDAD_ACONT = ["Leve", "Moderada", "Grave", "Extrema"]
+OPCIONES_EGEP5_TEMPORAL = ["En la infancia o adolescencia", "Hace más de 3 meses", "Hace más de 1 mes pero menos de 3 meses", "En el último mes"]
+OPCIONES_EGEP5_FRECUENCIA = ["En una única ocasión", "En varias ocasiones", "De forma repetida o reiterada"]
+OPCIONES_EGEP5_MOLESTIA = {
+    0: "0 - Ninguna",
+    1: "1 - Leve",
+    2: "2 - Moderada",
+    3: "3 - Grave",
+    4: "4 - Extrema",
 }
+OPCIONES_EGSR = OPCIONES_EGEP5_MOLESTIA
+OPCIONES_EGEP5 = OPCIONES_EGEP5_MOLESTIA
+
+BAREMOS_EGEP5_COLOMBIANOS = {
+    99: {"I": (27,28), "E": None, "C": (27,28), "A": (21,24), "Total": (71,80), "F": None},
+    98: {"I": (20,20), "E": None, "C": (21,26), "A": (19,20), "Total": (61,70), "F": (7,7)},
+    97: {"I": (19,19), "E": None, "C": (20,20), "A": (18,18), "Total": (59,60), "F": None},
+    96: {"I": (17,18), "E": None, "C": (19,19), "A": (17,17), "Total": (55,58), "F": None},
+    95: {"I": (16,16), "E": (8,8), "C": (17,18), "A": (16,16), "Total": (51,54), "F": (6,6)},
+    90: {"I": (15,15), "E": (6,7), "C": (15,16), "A": (15,15), "Total": (44,50), "F": None},
+    85: {"I": (14,14), "E": None, "C": (14,14), "A": (14,14), "Total": (40,43), "F": (5,5)},
+    80: {"I": (13,13), "E": (5,5), "C": (13,13), "A": None, "Total": (39,39), "F": None},
+    75: {"I": (12,12), "E": None, "C": (11,12), "A": (12,13), "Total": (36,38), "F": (4,4)},
+    70: {"I": (11,11), "E": None, "C": None, "A": (11,11), "Total": (35,35), "F": None},
+    65: {"I": None, "E": None, "C": (10,10), "A": (10,10), "Total": (33,34), "F": None},
+    60: {"I": (10,10), "E": (4,4), "C": (8,9), "A": (8,9), "Total": (30,32), "F": (3,3)},
+    55: {"I": None, "E": None, "C": (6,7), "A": None, "Total": (28,29), "F": None},
+    50: {"I": (8,9), "E": (3,3), "C": None, "A": (7,7), "Total": (25,27), "F": None},
+    45: {"I": None, "E": None, "C": (5,5), "A": (6,6), "Total": (22,24), "F": (2,2)},
+    40: {"I": (6,7), "E": None, "C": (4,4), "A": (5,5), "Total": (20,21), "F": None},
+    35: {"I": (5,5), "E": (2,2), "C": None, "A": None, "Total": (17,19), "F": None},
+    30: {"I": None, "E": (1,1), "C": (3,3), "A": (4,4), "Total": (15,16), "F": (1,1)},
+    25: {"I": (4,4), "E": (0,0), "C": (2,2), "A": None, "Total": (13,14), "F": (0,0)},
+    20: {"I": (3,3), "E": None, "C": (1,1), "A": (3,3), "Total": (10,12), "F": None},
+    15: {"I": (2,2), "E": None, "C": (0,0), "A": (2,2), "Total": (8,9), "F": None},
+    10: {"I": (1,1), "E": None, "C": None, "A": (1,1), "Total": (6,7), "F": None},
+    5: {"I": (0,0), "E": None, "C": None, "A": (0,0), "Total": (3,5), "F": None},
+    3: {"I": None, "E": None, "C": None, "A": None, "Total": (1,2), "F": None},
+    1: {"I": None, "E": None, "C": None, "A": None, "Total": (0,0), "F": None},
+}
+
+def obtener_percentil_egep5(puntaje, escala="Total"):
+    for pc in sorted(BAREMOS_EGEP5_COLOMBIANOS.keys(), reverse=True):
+        rango = BAREMOS_EGEP5_COLOMBIANOS[pc].get(escala)
+        if rango is None:
+            continue
+        if rango[0] <= puntaje <= rango[1]:
+            return pc
+    for pc in sorted(BAREMOS_EGEP5_COLOMBIANOS.keys(), reverse=True):
+        rango = BAREMOS_EGEP5_COLOMBIANOS[pc].get(escala)
+        if rango and puntaje >= rango[0]:
+            return pc
+    return 1
+
+def interpretar_egep5(total):
+    if total >= 51:
+        return "Extremo (Pc 95-99) - Grave, compatible con TEPT severo"
+    elif total >= 40:
+        return "Grave (Pc 85-90) - TEPT moderado-grave"
+    elif total >= 25:
+        return "Moderado (Pc 50-75) - Sintomatologia significativa"
+    elif total >= 13:
+        return "Leve (Pc 25-45) - Sintomatologia leve-moderada"
+    else:
+        return "No significativo (Pc <25) - Sin indicadores clinicos de TEPT"
+
+
+
+
+
 
 ITEMS_STAI = [
     "1. Me siento calmado/a (Ansiedad Estado)",
@@ -1150,539 +1246,11 @@ ITEMS_BDI = [
     },
 ]
 
-ITEMS_PAI = [
-    "1. Mis amigos están disponibles cuando los necesito.",
-    "2. Tengo algunos conflictos internos que me causan problemas.",
-    "3. Mi salud ha limitado algunas de mis actividades.",
-    (
-        "4. En algunas ocasiones siento tanta tensión que me cuesta mucho"
-        " soportarlo."
-    ),
-    (
-        "5. A veces necesito hacer las cosas de una cierta forma para evitar"
-        " ponerme nervioso."
-    ),
-    "6. Estoy triste gran parte del tiempo sin que haya una razón para ello.",
-    (
-        "7. Con frecuencia pienso y hablo tan deprisa que los demás no pueden"
-        " seguir mi pensamiento."
-    ),
-    "8. La mayor parte de la gente que conozco es digna de confianza.",
-    "9. De vez en cuando pierdo completamente la memoria.",
-    "10. Tengo algunas ideas que los demás consideran extrañas.",
-    "11. He dañado intencionadamente algunas pertenencias de otras personas.",
-    "12. Mi salud es muy buena para mi edad.",
-    "13. Soy una persona muy sociable.",
-    "14. Tengo cambios de humor repentinos.",
-    "15. A veces me siento culpable por la cantidad de alcohol que bebo.",
-    (
-        "16. Me encuentro a gusto en las situaciones en las que tengo que"
-        " dirigir a otros."
-    ),
-    "17. A menudo cambio la imagen y la idea que tengo sobre mí.",
-    "18. Tengo bastante mal carácter.",
-    "19. He tenido algunas relaciones tormentosas.",
-    "20. En ciertas ocasiones me gustaría estar muerto.",
-    "21. La gente tiene miedo de mi temperamento.",
-    "22. A veces tomo drogas para sentirme mejor.",
-    "23. He probado casi todos los tipos de drogas.",
-    "24. A veces incluso las cosas pequeñas me preocupan demasiado.",
-    "25. Suelo tener dificultad para concentrarme a causa de mis nervios.",
-    (
-        "26. Con frecuencia tengo miedo de 'meter la pata' y decir algo"
-        " inconveniente."
-    ),
-    "27. Siento que he decepcionado a todo el mundo.",
-    "28. Tengo muchas ideas brillantes.",
-    "29. Hay personas que quieren hacerme daño.",
-    "30. Me parece que no me relaciono bien con la gente.",
-    (
-        "31. He pedido dinero prestado a sabiendas de que no podría"
-        " devolverlo."
-    ),
-    "32. La mayor parte del tiempo no me encuentro bien.",
-    "33. Con frecuencia me siento inquieto.",
-    "34. Sigo reviviendo algo horrible que me ocurrió.",
-    "35. Casi no tengo energía.",
-    (
-        "36. Me enfado cuando otras personas son demasiado lentas para entender"
-        " mis ideas."
-    ),
-    "37. La gente suele tratarme bastante bien.",
-    "38. Mis pensamientos se han hecho bastante confusos.",
-    "39. Disfruto haciendo cosas peligrosas.",
-    "40. Mi poeta favorito es Ruperto Miralles.",
-    "41. La mayor parte de las personas de mi entorno están cuando las necesito.",
-    "42. Necesito hacer algunos cambios importantes en mi vida.",
-    (
-        "43. He tenido algunas enfermedades que los médicos no han sido"
-        " capaces de explicar."
-    ),
-    "44. Mi nerviosismo me impide hacer algunas cosas bien.",
-    "45. Tengo ciertos impulsos que lucho por controlar.",
-    "46. He olvidado lo que es sentirse feliz.",
-    (
-        "47. Asumo tantos compromisos que luego no soy capaz de"
-        " cumplirlos."
-    ),
-    (
-        "48. Debo estar alerta ante la posibilidad de que algunas personas no"
-        " sean leales."
-    ),
-    "49. No tengo casi ningún buen recuerdo de mi infancia.",
-    "50. A veces otras personas meten ideas en mi cabeza.",
-    "51. He realizado cosas que no eran completamente legales.",
-    "52. Mis problemas de salud son muy complicados.",
-    "53. Me resulta fácil hacer nuevos amigos.",
-    "54. Experimento estados de ánimo muy intensos.",
-    (
-        "55. Tengo algunas dificultades para controlar la cantidad de alcohol"
-        " que bebo."
-    ),
-    "56. Suelo actuar como un líder de forma natural.",
-    "57. A veces tengo una intensa sensación de vacío interior.",
-    "58. Nunca tengo problemas por culpa de mi temperamento.",
-    "59. Quiero que algunas personas sepan que me han hecho mucho daño.",
-    "60. He pensado en algunas formas de quitarme la vida.",
-    "61. A veces exploto y pierdo completamente el control sobre mí.",
-    "62. Algunas personas me han dicho que tengo problemas con las drogas.",
-    "63. El consumo de drogas me ha producido algunos problemas de salud.",
-    "64. No acepto bien las críticas.",
-    (
-        "65. Con frecuencia me resulta difícil divertirme porque todo me"
-        " preocupa."
-    ),
-    "66. Tengo temores excesivamente grandes.",
-    "67. A veces pienso que no valgo nada.",
-    (
-        "68. Tengo muchas cualidades interesantes de las que otras personas"
-        " carecen."
-    ),
-    "69. Algunas personas hacen cosas para que yo quede mal.",
-    "70. Tengo muy poco que decir a otras personas.",
-    "71. Me aprovecharía de los demás si lo tuviera fácil.",
-    "72. Tengo muchos dolores.",
-    (
-        "73. Algunas veces me preocupo tanto que me parece que voy a"
-        " desmayarme."
-    ),
-    (
-        "74. Con frecuencia me vienen recuerdos del pasado que me provocan"
-        " malestar."
-    ),
-    "75. Concilio fácilmente el sueño.",
-    "76. No tengo paciencia con la gente que intenta frenarme.",
-    (
-        "77. Creo que en mi vida he tenido tanta suerte como la mayor parte de"
-        " la gente."
-    ),
-    "78. Algunas veces mezclo unos pensamientos con otros.",
-    "79. Hago muchas cosas peligrosas sólo por la emoción que me producen.",
-    (
-        "80. A veces recibo por correo anuncios que no me interesan en"
-        " absoluto."
-    ),
-    "81. Cuando tengo problemas cuento con personas con las que puedo hablar.",
-    "82. Tengo que cambiar en algunos aspectos, aunque me cueste mucho.",
-    (
-        "83. Alguna parte de mi cuerpo se ha quedado insensible en ocasiones,"
-        " sin saber por qué."
-    ),
-    "84. En algunas ocasiones tengo miedo sin que haya motivos para ello.",
-    "85. Me incomoda que las cosas no estén en su sitio.",
-    "86. Cualquier cosa me supone un gran esfuerzo.",
-    (
-        "87. Mis amigos no son capaces de seguir todas mis actividades"
-        " sociales."
-    ),
-    "88. La mayor parte de la gente tiene buenas intenciones.",
-    "89. Mi destino ha sido ser infeliz desde el día en que nací.",
-    (
-        "90. A veces parece que mis pensamientos se producen en voz alta y que"
-        " los demás pueden oírlos."
-    ),
-    (
-        "91. He dicho muchas mentiras para librarme de situaciones"
-        " comprometidas."
-    ),
-    "92. Me cuesta mucho hacer las cosas por los problemas de salud que tengo.",
-    "93. Me gusta conocer a nuevas personas.",
-    "94. A veces me meto en problemas porque actúo de forma muy impulsiva.",
-    "95. Algunas personas cercanas piensan que bebo demasiado.",
-    "96. Se me dan bien los trabajos en los que hay que dirigir a otros.",
-    "97. Me preocupa mucho que otras personas puedan abandonarme.",
-    (
-        "98. Cuando estoy conduciendo y me indigno con otros conductores hago"
-        " que se den cuenta de ello."
-    ),
-    "99. Algunas personas muy próximas me han abandonado.",
-    "100. He hecho planes para matarme.",
-    "101. Cuando me enfurezco es muy difícil calmarme.",
-    "102. He tenido problemas económicos por el consumo de drogas.",
-    "103. Soy incapaz de controlar mi consumo de drogas.",
-    "104. A veces me quejo demasiado.",
-    (
-        "105. Con frecuencia siento tal preocupación y nerviosismo que casi no"
-        " puedo soportarlo."
-    ),
-    (
-        "106. Cuando tengo que hacer algo delante de otras personas siento"
-        " muchos nervios."
-    ),
-    "107. Me siento sin fuerzas para continuar.",
-    "108. Tengo planes que me convertirán algún día en una persona famosa.",
-    "109. Las personas que me rodean son leales conmigo.",
-    "110. Soy una persona solitaria.",
-    "111. Haría cualquier cosa si me pagasen lo suficiente.",
-    "112. Tengo buena salud.",
-    (
-        "113. A veces siento mareos cuando he estado sometido a una presión"
-        " fuerte."
-    ),
-    (
-        "114. El recuerdo de una mala experiencia me ha afectado durante mucho"
-        " tiempo."
-    ),
-    "115. Es raro que tenga algunas dificultades para dormir.",
-    "116. A veces me irrito porque otras personas no comprenden mis planes.",
-    "117. He dado mucho pero es poco lo que he recibido a cambio.",
-    "118. Algunas veces me cuesta separar unos pensamientos de otros.",
-    "119. A veces me comporto de forma desenfrenada e insensata.",
-    "120. El deporte que más me gusta ver por televisión es el salto de altura.",
-    "121. Las personas que conozco se preocupan por mí.",
-    "122. Necesito ayuda para afrontar los problemas importantes.",
-    (
-        "123. En alguna ocasión mis piernas estaban tan débiles que no podía"
-        " caminar."
-    ),
-    (
-        "124. A menudo tengo la sensación de que está a punto de ocurrir algo"
-        " horrible."
-    ),
-    "125. Soy capaz de descansar aunque mi casa esté desordenada.",
-    "126. Parece que nada es capaz de proporcionarme placer.",
-    "127. En ocasiones mis pensamientos se mueven a una velocidad excesiva.",
-    "128. La gente suele ocultar sus verdaderas intenciones.",
-    "129. Tengo problemas psicológicos graves que comenzaron de forma repentina.",
-    "130. Hay personas que intentan controlar mis pensamientos.",
-    "131. Nunca he tenido conflictos con la ley.",
-    (
-        "132. Parece que mis problemas de salud son siempre difíciles de"
-        " tratar."
-    ),
-    "133. Soy una persona acogedora.",
-    "134. A veces no puedo contener mi rabia.",
-    (
-        "135. Mi costumbre de beber me ha producido algunos problemas en las"
-        " relaciones con los demás."
-    ),
-    "136. Me cuesta mucho defenderme sin ayuda.",
-    "137. A menudo me pregunto lo que debería hacer con mi vida.",
-    (
-        "138. Sería capaz de gritar a otros con tal de que queden claros mis"
-        " argumentos."
-    ),
-    "139. Cuando estoy muy enfadado suelo hacer cosas para hacerme daño.",
-    "140. En los últimos tiempos he estado pensando en el suicidio.",
-    "141. A veces rompo cosas cuando estoy muy furioso.",
-    "142. Nunca consumo drogas ilegales.",
-    "143. Me perjudica mi comportamiento excesivamente impulsivo.",
-    "144. A veces soy demasiado impaciente.",
-    "145. Mis amigos dicen que me preocupo demasiado.",
-    "146. Rara vez siento miedo.",
-    "147. Por más que lo intente, nada me sale bien.",
-    "148. Creo que tengo las respuestas a algunas preguntas importantes.",
-    "149. Algunas personas tratan de impedir que yo pueda progresar.",
-    "150. Hay pocas personas a las que sienta cercanas.",
-    "151. Pienso en mí ante todo y dejo que los demás cuiden de sí mismos.",
-    "152. Rara vez me quejo de mi estado de salud.",
-    "153. A veces me cuesta respirar cuando me someto a mucha tensión.",
-    (
-        "154. Parece que no puedo librarme de ciertos acontecimientos del"
-        " pasado."
-    ),
-    "155. He estado moviéndome con más lentitud de lo normal.",
-    (
-        "156. Tengo planes importantes y me molesta mucho que otras personas"
-        " intenten meterse en medio."
-    ),
-    (
-        "157. Muchas personas no son capaces de apreciar lo que he hecho por"
-        " ellas."
-    ),
-    "158. A veces parece que alguien está bloqueando mis pensamientos.",
-    "159. Me gusta conducir muy deprisa.",
-    "160. La mayor parte de la gente está deseando ir al dentista.",
-    "161. La gente no comprende lo mucho que sufro.",
-    "162. Tengo muchos problemas económicos.",
-    "163. Recientemente se han producido muchos cambios en mi vida.",
-    "164. En mi casa hay poca estabilidad.",
-    "165. Las cosas no van bien en mi familia.",
-    "166. He perdido el interés por cosas que antes me gustaban.",
-    "167. Últimamente tengo menos necesidad de dormir de la habitual.",
-    "168. Generalmente doy por supuesto que la gente dice la verdad.",
-    "169. Paso la mayor parte del tiempo en soledad.",
-    "170. He oído voces que nadie más es capaz de oír.",
-    (
-        "171. Me gusta hacer cosas sólo para comprobar si puedo salir impune"
-        " de ellas."
-    ),
-    (
-        "172. He tenido únicamente los problemas de salud que la mayoría de la"
-        " gente tiene."
-    ),
-    (
-        "173. Necesito tiempo para sentirme en confianza con personas que no"
-        " conozco."
-    ),
-    "174. Siempre he sido una persona bastante feliz.",
-    "175. La bebida me ayuda a sobrellevar ciertas situaciones sociales.",
-    "176. Soy el tipo de persona que se hace cargo de las cosas.",
-    (
-        "177. No puedo soportar separarme de las personas que son muy cercanas"
-        " a mí."
-    ),
-    "178. Nunca pierdo el control por estar demasiado furioso.",
-    (
-        "179. He cometido algunos errores graves en relación con las personas"
-        " que he elegido como amigas."
-    ),
-    "180. Durante mucho tiempo he estado pensando en el suicidio.",
-    "181. He amenazado a otras personas con hacerlas daño.",
-    "182. He utilizado medicamentos para animarme.",
-    "183. Suelo tener pocos cambios de humor.",
-    "184. A veces intento evitar a las personas que me disgustan.",
-    (
-        "185. Mi preocupación por las cosas es similar a la de la mayoría de"
-        " las personas."
-    ),
-    "186. No me asusta conducir por autopistas.",
-    "187. Me parece que me cuesta mucho concentrarme.",
-    "188. He tenido algunos éxitos destacados.",
-    "189. Algunas personas cambian sus planes para molestarme.",
-    "190. Disfruto con la compañía de otras personas.",
-    "191. No me gusta sentirme ligado a otra persona.",
-    "192. Tengo problemas de espalda.",
-    "193. Soy capaz de relajarme con facilidad.",
-    (
-        "194. He tenido algunas experiencias terribles que hacen que me sienta"
-        " culpable."
-    ),
-    (
-        "195. Con frecuencia me despierto muy temprano por la mañana y luego"
-        " no puedo volver a dormirme."
-    ),
-    "196. Puedo ser muy exigente cuando quiero que las cosas se hagan deprisa.",
-    "197. Generalmente se ha reconocido lo que he hecho.",
-    "198. Mi mente tiende a saltar rápidamente de unas cosas a otras.",
-    "199. La idea de una vida tranquila y ordenada nunca me ha interesado.",
-    "200. Mis aficiones favoritas son el tiro con arco y la filatelia.",
-    "201. Me gusta estar con mi familia.",
-    "202. Me gusta cómo soy.",
-    "203. En ciertas ocasiones he perdido la sensibilidad en las manos.",
-    "204. Raras veces siento tensión o ansiedad.",
-    "205. Normalmente me doy cuenta de cuando algo tiene muchos gérmenes.",
-    "206. No me interesa la vida.",
-    (
-        "207. Tengo la sensación de que necesito estar en constante actividad,"
-        " sin descansar."
-    ),
-    "208. La gente piensa que soy demasiado suspicaz.",
-    "209. A veces no puedo recordar quién soy.",
-    "210. Otras personas pueden leer mis pensamientos.",
-    (
-        "211. Nunca me expulsaron de la escuela durante my niñez, ni siquiera"
-        " temporalmente."
-    ),
-    "212. He tenido algunas enfermedades o molestias bastante raras.",
-    "213. Se necesita tiempo para que otras personas lleguen a conocerme.",
-    (
-        "214. En algunas ocasiones me he enfurecido tanto que era incapaz de"
-        " manifestar toda la ira que sentía."
-    ),
-    "215. En ocasiones he tenido que dejar la bebida.",
-    "216. Prefiero que sean otros los que toman las decisiones.",
-    "217. Normalmente no me aburro.",
-    "218. Siempre que puedo evito las discusiones.",
-    "219. Cuando tengo un amigo o amiga, lo es para mucho tiempo.",
-    "220. La muerte sería un alivio.",
-    "221. La gente piensa que soy una persona agresiva.",
-    "222. Nunca consumo drogas para ayudarme a enfrentarme al mundo.",
-    "223. Rara vez me siento una persona solitaria.",
-    "224. A veces dejo las cosas para el último momento.",
-    "225. Generalmente me preocupo por las cosas más de lo que debería.",
-    "226. No me asustan las alturas.",
-    "227. Creo que en el futuro me van a ocurrir cosas favorables.",
-    "228. Creo que podría ser un buen cómico.",
-    "229. Es muy raro que la gente me trate mal a propósito.",
-    "230. Siempre que puedo me gusta estar con otras personas.",
-    "231. No me gusta mantener una relación durante mucho tiempo.",
-    "232. Tengo problemas de estómago.",
-    "233. A veces noto que mi corazón late muy fuerte.",
-    "234. Sigo teniendo pesadillas sobre el pasado.",
-    "235. Tengo buen apetito.",
-    (
-        "236. Me molesta mucho si alguna persona trata de impedir que cumpla"
-        " mis objetivos."
-    ),
-    "237. La gente que ha tenido éxito generalmente lo ha merecido.",
-    "238. A veces me parece que me han robado los pensamientos.",
-    "239. Cuando me canso de un sitio inmediatamente me voy a otro.",
-    "240. No me gusta comprar cosas que me parecen excesivamente caras.",
-    "241. En mi familia discutimos más que hablamos.",
-    "242. Muchos de mis problemas son consecuencia de mi actitud.",
-    "243. He tenido experiencias de visión doble o de visión borrosa.",
-    "244. Me sobresalto con facilidad.",
-    "245. Los demás consideran que presto mucha atención a los detalles.",
-    "246. En los últimos tiempos he sentido feliz habitualmente.",
-    "247. Últimamente tengo menos necesidad de dormir de la habitual.",
-    "248. Generalmente las cosas no son lo que aparentan a primera vista.",
-    "249. A veces veo sólo en blanco y negro.",
-    "250. Tengo un sexto sentido que me avisa de las cosas que van a ocurrir.",
-    "251. Generalmente me portaba bien cuando iba al colegio.",
-    "252. He ido muchas veces al médico en mi vida.",
-    "253. Intento acoger a las personas que parecen estar solas.",
-    "254. A veces tomo una copa de una bebida alcohólica nada más levantarme.",
-    "255. La bebida me ha causado algunos problemas en casa.",
-    "256. Digo siempre lo que pienso.",
-    "257. Suelo hacer lo que otras personas quieren que haga.",
-    "258. A veces puedo ser una persona muy violenta.",
-    "259. Es muy difícil hacer que me enfade.",
-    "260. He estado pensando en lo qué podría decir en una carta de suicidio.",
-    "261. No tengo motivos para seguir viviendo.",
-    "262. Nunca he tenido problemas en el trabajo por causa de las drogas.",
-    "263. Gasto el dinero con demasiada facilidad.",
-    "264. A veces hago promesas que no puedo cumplir.",
-    "265. A veces me pongo tan nervioso que me parece que voy a morir.",
-    "266. Evito montarme en aviones.",
-    "267. Tengo cosas importantes que aportar.",
-    (
-        "268. Últimamente confío tanto en mí que creo que puedo conseguir lo"
-        " que me proponga."
-    ),
-    "269. La gente me tiene manía.",
-    "270. Hago amigos con facilidad.",
-    "271. Siempre tengo algo que decir u opinar sobre cualquier cosa.",
-    (
-        "272. Me duele la cabeza con más frecuencia que a la mayor parte de la"
-        " gente."
-    ),
-    "273. Me sudan las manos con frecuencia.",
-    (
-        "274. Tuve una experiencia muy mala que me ha hecho perder el interés"
-        " por algunas cosas con las que antes disfrutaba."
-    ),
-    "275. A menudo me despierto a mitad de la noche.",
-    "276. A veces estoy muy suspicaz y me enfado con facilidad.",
-    "277. No soy una persona que suela guardar rencor.",
-    "278. Los pensamientos desaparecen rápidamente de mi mente.",
-    "279. Nunca tomo riesgos si puedo evitarlo.",
-    "280. La mayor parte de la gente prefiere ganar a perder.",
-    "281. Paso poco tiempo con mi familia.",
-    "282. Soy capaz de resolver mis problemas por mi cuenta.",
-    (
-        "283. Algunas partes de mi cuerpo han quedado paralizadas en alguna"
-        " ocasión."
-    ),
-    "284. No soy de las personas que se asustan fácilmente.",
-    "285. Me controlo de una forma muy estricta.",
-    "286. Casi siempre soy una persona alegre y positiva.",
-    "287. Casi nunca compro cosas por un impulso repentino.",
-    "288. La gente tiene que ganarse mi confianza.",
-    (
-        "289. Tengo visiones en las que me veo en la obligación de cometer"
-        " ciertos delitos."
-    ),
-    "290. No creo que existan personas capaces de leer la mente.",
-    "291. Nunca he robado dinero u objetos de otras personas.",
-    "292. Me gusta hablar con otras personas sobre sus problemas de salud.",
-    "293. Soy una persona afectuosa.",
-    "294. Nunca conduzco si he estado bebiendo.",
-    "295. Casi nunca bebo alcohol.",
-    "296. La gente suele pedirme opinión.",
-    "297. Si cuando acudo a un establecimiento me atienden mal reclamo al responsable.",
-    "298. Regaño a las personas que se lo merecen.",
-    "299. Trato de evitar el tener que elevar la voz.",
-    "300. Me he preguntado cómo reaccionarían otras personas si me suicidase.",
-    "301. Tengo muchos motivos para vivir.",
-    "302. Comparto el consumo de drogas con mis mejores amigos.",
-    "303. Soy una persona temeraria.",
-    "304. A veces podría haber actuado más reflexivamente de lo que lo hice.",
-    "305. No me preocupo por las cosas que escapan a mi control.",
-    "306. No me preocupa viajar en autobús o en tren.",
-    "307. Tengo bastante éxito en lo que emprendo.",
-    "308. Soy incapaz de verme como una persona famosa.",
-    "309. Soy objeto de una conspiración.",
-    "310. Mantengo el contacto con mis amigos y amigas.",
-    "311. Cuando hago una promesa no siento la necesidad de cumplirla.",
-    "312. Tengo diarreas con frecuencia.",
-    "313. Tengo el pulso firme.",
-    "314. Evito ciertas cosas que me traen malos recuerdos.",
-    "315. Tengo poco interés por el sexo.",
-    (
-        "316. Soy poco paciente con la gente que no está de acuerdo con mis"
-        " planes."
-    ),
-    "317. A la larga uno siempre se ve recompensado si ayuda a los demás.",
-    (
-        "318. Soy capaz de concentrarme ahora tan bien como en mis mejores"
-        " tiempos."
-    ),
-    "319. No soy del tipo de personas a las que asustan los retos.",
-    (
-        "320. En mi tiempo libre suelo leer, ver la televisión o simplemente"
-        " descansar."
-    ),
-    "321. Me gustaría entender por qué actúo en la forma en que lo hago.",
-    "322. Mi vida es completamente impredecible.",
-    (
-        "323. En algunas ocasiones mi vista ha empeorado y luego ha vuelto a"
-        " mejorar."
-    ),
-    "324. Soy una persona muy tranquila y relajada.",
-    "325. La gente dice que soy perfeccionista.",
-    "326. Me satisface plenamente mi situación laboral.",
-    "327. Me preocupa no tener bastante dinero para salir adelante.",
-    "328. La relación con mi pareja no va bien.",
-    (
-        "329. Creo que dentro de mí hay tres o cuatro personalidades"
-        " completamente diferentes."
-    ),
-    "330. Soy una persona bastante comprensiva.",
-    "331. Es importante para mí tener relaciones personales íntimas.",
-    "332. Tengo poca paciencia con la gente.",
-    "333. Tengo más amigos que la mayor parte de la gente que conozco.",
-    "334. Nunca he tenido problemas por haber bebido.",
-    "335. He tenido algunos problemas en el trabajo por culpa de la bebida.",
-    (
-        "336. Suelo intentar que los demás no se den cuenta cuando discrepo de"
-        " ellos."
-    ),
-    "337. Soy una persona muy independiente.",
-    "338. La gente se sorprendería si me viese gritar a alguien.",
-    (
-        "339. Desde que soy una persona adulta nunca he empezado una pelea que"
-        " haya llegado a las manos."
-    ),
-    "340. Estoy pensando en la posibilidad de suicidarme.",
-    (
-        "341. Las cosas nunca me han ido tan mal como para pensar en"
-        " suicidarme."
-    ),
-    (
-        "342. El consumo de drogas nunca me ha producido problemas con la"
-        " familia o los amigos."
-    ),
-    "343. Pongo mucho cuidado en la forma de gastar el dinero.",
-    "344. Casi nunca estoy de mal humor.",
-]
+# ITEMS_PAI eliminado en V20 - reemplazado por EGS-R
 
-OPCIONES_PAI = {
-    "F": "F - Falso",
-    "LV": "LV - Ligeramente verdadero",
-    "BV": "BV - Bastante verdadero",
-    "CV": "CV - Completamente verdadero",
-}
+
+
+
 
 
 
@@ -1691,7 +1259,7 @@ OPCIONES_PAI = {
 MAPA_TESTS = {
     "LSB-50": "LSB-50",
     "MCMI-III": "MCMI-III",
-    "CUIDA": "CUIDA",
+    "CIT": "CIT",
     "STAI": "STAI",
     "BDI-II": "BDI-II",
     "PAI": "PAI",
@@ -1699,8 +1267,22 @@ MAPA_TESTS = {
 
 
 
-st.sidebar.title("⚖️ Sistema Forense Online")
-rol = st.sidebar.radio("¿Cómo querés ingresar?", ["🧑‍⚖️ Soy Perito (Admin)", "🧑 Soy Evaluado (con Token)"], index=0)
+# --- DETECCIÓN AUTOMÁTICA DE LINK DE WHATSAPP ---
+# Si viene ?token= en la URL, forzar modo Evaluado para que no pida contraseña maestra
+query_params_init = st.query_params
+token_init = query_params_init.get("token", None)
+if token_init:
+    token_init_clean = token_init.strip().upper()
+    if not st.session_state.get("token_actual"):
+        st.session_state["token_actual"] = token_init_clean
+    # Forzar rol evaluado
+    rol = "🧑 Soy Evaluado (con Token)"
+    st.sidebar.title("⚖️ Sistema Forense Online")
+    st.sidebar.success(f"Link detectado: {token_init_clean}")
+    st.sidebar.info("Ingresando como Evaluado")
+else:
+    st.sidebar.title("⚖️ Sistema Forense Online")
+    rol = st.sidebar.radio("¿Cómo querés ingresar?", ["🧑‍⚖️ Soy Perito (Admin)", "🧑 Soy Evaluado (con Token)"], index=0)
 
 if rol == "🧑‍⚖️ Soy Perito (Admin)":
     st.title("Panel Perito - Control Central")
@@ -1741,10 +1323,11 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
             "user_agent": ua
         })
         st.success(f"¡Clave generada!: {nuevo_token}")
-        base_url = "https://psi-forense-knto5bo9aobIpy73lw34o6.streamlit.app"
+        base_url = "https://mcmi-iv-nqsfb7xqw7vbyzpcrcene6.streamlit.app"  # URL real detectada
         link_completo = f"{base_url}/?token={nuevo_token}"
         st.code(link_completo, language="text")
-        st.info("Copiá este link y envialo por WhatsApp. Podés quedarte como Perito logueado y probar en incógnito. El evaluado puede hacer los 6 tests con el mismo código.")
+        st.success("✅ Link listo para WhatsApp - entra directo como Evaluado sin pedir contraseña")
+        st.info("Cuando el evaluado abra este link, entra automáticamente a 'Soy Evaluado' y no le pide contraseña maestra. Probalo en incógnito.")
 
     st.divider()
     st.subheader("📋 Estado de Claves y Evaluaciones - Código de Protocolo")
@@ -1830,17 +1413,18 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
                                     preg = ITEMS_MCMIIII[n]
                                 elif "MCMI-IV" in test_n and n < len(ITEMS_MCMI_IV):
                                     preg = ITEMS_MCMI_IV[n]
-                                elif "CUIDA" in test_n and n < len(ITEMS_CUIDA):
-                                    preg = ITEMS_CUIDA[n]
-                                    etiqueta = OPCIONES_CUIDA.get(str(r_v), str(r_v))
+                                elif ("EGEP" in test_n or "EGPT" in test_n) and True:
+                                    preg = ITEMS_EGEP5_SINTOMAS[n] if n < len(ITEMS_EGEP5_SINTOMAS) else f"Item EGEP-5 {n+1}"
+                                    etiqueta = OPCIONES_EGEP5_MOLESTIA.get(int(r_v), str(r_v)) if str(r_v).isdigit() else str(r_v)
                                 elif "STAI" in test_n and n < len(ITEMS_STAI):
                                     preg = ITEMS_STAI[n]
                                 elif "BDI-II" in test_n and n < len(ITEMS_BDI):
                                     preg = ITEMS_BDI[n].get('titulo','')
                                     etiqueta = str(r_v)
-                                elif "PAI" in test_n and n < len(ITEMS_PAI):
-                                    preg = ITEMS_PAI[n]
-                                    etiqueta = OPCIONES_PAI.get(str(r_v), str(r_v))
+                                elif "EGS-R" in test_n and "dis_" in str(n):
+                                    preg = f"Síntoma disociativo {n}"
+                                    etiqueta = OPCIONES_EGEP5_MOLESTIA.get(int(r_v), str(r_v)) if str(r_v).isdigit() else str(r_v)
+
                             except:
                                 pass
                             filas_detalle.append({
@@ -1966,16 +1550,17 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
                                             puntaje_texto = f"{resp_val} - {etiqueta}"
                                         elif "MCMI-III" in test_nombre and num < len(ITEMS_MCMIIII):
                                             pregunta_texto = ITEMS_MCMIIII[num]
-                                        elif "CUIDA" in test_nombre and num < len(ITEMS_CUIDA):
-                                            pregunta_texto = ITEMS_CUIDA[num]
-                                            etiqueta = OPCIONES_CUIDA.get(str(resp_val), OPCIONES_CUIDA.get(resp_val, str(resp_val)))
+                                        elif "EGS-R" in test_nombre and num < len(ITEMS_EGSR):
+                                            pregunta_texto = ITEMS_EGSR[num]
+                                            etiqueta = OPCIONES_EGEP5_MOLESTIA.get(int(resp_val), str(resp_val)) if str(resp_val).isdigit() else str(resp_val)
                                             puntaje_texto = f"{resp_val} - {etiqueta}"
                                         elif "STAI" in test_nombre and num < len(ITEMS_STAI):
                                             pregunta_texto = ITEMS_STAI[num]
                                         elif "BDI-II" in test_nombre and num < len(ITEMS_BDI):
                                             pregunta_texto = ITEMS_BDI[num].get('titulo', f"Ítem {num+1}")
-                                        elif "PAI" in test_nombre and num < len(ITEMS_PAI):
-                                            pregunta_texto = ITEMS_PAI[num]
+                                        # PAI eliminado - EGS-R reemplazo
+                                        elif False and "PAI" in test_nombre:
+                                            pass
                                     except:
                                         pass
                                     tabla.append({"Nº": num+1, "Pregunta": pregunta_texto, "Respuesta": puntaje_texto})
@@ -2036,9 +1621,9 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
                                                 pregunta_texto = ITEMS_MCMIIII[num]
                                             elif "MCMI-IV" in test_nombre and num < len(ITEMS_MCMI_IV):
                                                 pregunta_texto = ITEMS_MCMI_IV[num]
-                                            elif "CUIDA" in test_nombre and num < len(ITEMS_CUIDA):
-                                                pregunta_texto = ITEMS_CUIDA[num]
-                                                resp_etiqueta = OPCIONES_CUIDA.get(str(resp_val), OPCIONES_CUIDA.get(resp_val, str(resp_val)))
+                                            elif "EGS-R" in test_nombre and num < len(ITEMS_EGSR):
+                                                pregunta_texto = ITEMS_EGSR[num]
+                                                resp_etiqueta = OPCIONES_EGEP5_MOLESTIA.get(int(resp_val), str(resp_val)) if str(resp_val).isdigit() else str(resp_val)
                                             elif "STAI" in test_nombre and num < len(ITEMS_STAI):
                                                 pregunta_texto = ITEMS_STAI[num]
                                                 resp_etiqueta = OPCIONES_STAI.get(str(resp_val), OPCIONES_STAI.get(resp_val, str(resp_val)))
@@ -2047,9 +1632,9 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
                                                 pregunta_texto = item.get('titulo', f"Ítem {num+1}")
                                                 # Para BDI, resp es el texto elegido
                                                 resp_etiqueta = str(resp_val)
-                                            elif "PAI" in test_nombre and num < len(ITEMS_PAI):
-                                                pregunta_texto = ITEMS_PAI[num]
-                                                resp_etiqueta = OPCIONES_PAI.get(str(resp_val), str(resp_val))
+                                            # PAI eliminado
+                                            elif False and "PAI" in test_nombre:
+                                                pass
                                         except:
                                             pass
                                         tabla_excel.append({
@@ -2140,29 +1725,102 @@ else:
         st.stop()
     
     dp = datos_token.get("datos_persona") or {}
-    datos_completos = all([dp.get('nombre'), dp.get('apellido'), dp.get('edad'), dp.get('dni'), dp.get('localidad'), dp.get('consentimiento')])
+    # --- PASO 1: Datos personales (simplificado: Esperanza ya cubre residencia) ---
+    datos_personales_completos = all([dp.get('nombre'), dp.get('apellido'), dp.get('edad'), dp.get('dni'), dp.get('localidad'), dp.get('nacionalidad')])
+    datos_completos = all([datos_personales_completos, dp.get('consentimiento')])
 
-    if not datos_completos:
+    if not datos_personales_completos:
         st.success(f"Código válido: {token_actual}")
         st.subheader("Paso 1: Completá tus datos personales")
         with st.form("form_datos_personales"):
             c1, c2 = st.columns(2)
-            nombre = c1.text_input("Nombre*", autocomplete="off")
-            apellido = c2.text_input("Apellido*", autocomplete="off")
-            c3, c4, c5 = st.columns(3)
-            edad = c3.number_input("Edad*", min_value=6, max_value=100, value=18)
-            dni = c4.text_input("DNI*", autocomplete="off")
-            localidad = c5.text_input("Localidad donde vivís*", autocomplete="off")
-            st.divider()
-            st.markdown("### Consentimiento Informado\nUsted participará en evaluación psicológica forense. Datos confidenciales Ley 26.657.")
-            consent = st.checkbox("✅ He leído y acepto el Consentimiento Informado*")
-            if st.form_submit_button("Aceptar y Continuar a los Tests", type="primary", use_container_width=True):
-                if not (nombre and apellido and dni and localidad and edad and consent):
-                    st.error("Completá todo y aceptá consentimiento.")
+            nombre = c1.text_input("Nombre*", value=dp.get('nombre',''), autocomplete="off")
+            apellido = c2.text_input("Apellido*", value=dp.get('apellido',''), autocomplete="off")
+            c3, c4, c5, c6 = st.columns(4)
+            edad = c3.number_input("Edad*", min_value=6, max_value=100, value=int(dp.get('edad',18)) if dp.get('edad') else 18)
+            dni = c4.text_input("DNI*", value=dp.get('dni',''), autocomplete="off")
+            nacionalidad = c5.text_input("Nacionalidad*", value=dp.get('nacionalidad','Argentina'), autocomplete="off")
+            localidad = c6.text_input("Localidad*", value=dp.get('localidad','ESPERANZA'), autocomplete="off")
+            if st.form_submit_button("Guardar datos y pasar al Consentimiento", type="primary", use_container_width=True):
+                if not (nombre and apellido and dni and localidad and nacionalidad and edad):
+                    st.error("Completá todos los campos obligatorios.")
                 else:
-                    dp.update({"nombre": nombre.strip(), "apellido": apellido.strip(), "edad": int(edad), "dni": dni.strip(), "localidad": localidad.strip(), "consentimiento": True, "fecha_consentimiento": datetime.now(TZ).strftime("%d/%m/%Y %H:%M")})
+                    dp.update({
+                        "nombre": nombre.strip(), 
+                        "apellido": apellido.strip(), 
+                        "edad": int(edad), 
+                        "dni": dni.strip(), 
+                        "localidad": localidad.strip(), 
+                        "nacionalidad": nacionalidad.strip()
+                    })
                     datos_token["datos_persona"] = dp
                     guardar_token_db(token_actual, datos_token)
+                    st.rerun()
+        st.stop()
+
+    if not dp.get('consentimiento'):
+        st.success(f"Datos guardados: {dp.get('nombre')} {dp.get('apellido')} - DNI {dp.get('dni')}")
+        st.subheader("Paso 2: Consentimiento Informado Tele Evaluación Psicológica")
+        st.info("Consentimiento autogenerado con hora oficial Argentina (GMT-3 Buenos Aires). Quedará guardado con firma digital.")
+
+        # Autocompletado con hora Argentina - sin inputs manuales
+        ahora_ba = datetime.now(TZ)
+        # Formato: ESPERANZA - 20/09/2026 20:12 ART (GMT-3)
+        lugar_fecha_auto = f"{dp.get('localidad','ESPERANZA').upper()} - {ahora_ba.strftime('%d/%m/%Y %H:%M')} ART (GMT-3 Buenos Aires)"
+        dias_map = ["lunes","martes","miércoles","jueves","viernes","sábado","domingo"]
+        dia_nombre = dias_map[ahora_ba.weekday()]
+        
+        # Valores fijos autocompletados
+        lic_auto = "Aldo Montoya"
+        plataforma_auto = "Google Meet / Zoom"
+        dias_auto = f"{dia_nombre} {ahora_ba.strftime('%d/%m/%Y')}"
+        anio_auto = str(ahora_ba.year)
+        
+        with st.form("form_consentimiento_tele"):
+            st.markdown("### CONSENTIMIENTO INFORMADO TELE EVALUACIÓN PSICOLÓGICA")
+            
+            st.markdown(f"**Lugar y Fecha (hora oficial Argentina):** {lugar_fecha_auto}")
+            st.caption(f"Sincronizado con America/Argentina/Buenos_Aires - {ahora_ba.isoformat()}")
+            
+            st.markdown(f"**Yo:** {dp.get('nombre')} {dp.get('apellido')} **identificado con DNI:** {dp.get('dni')} **de Nacionalidad:** {dp.get('nacionalidad')} - **Localidad:** {dp.get('localidad')}")
+
+            st.divider()
+            # Texto legal final - AUTOCOMPLETADO con hora BA
+            texto_consent = f"""
+            **Lugar y Fecha:** {lugar_fecha_auto}
+
+            Yo **{dp.get('nombre')} {dp.get('apellido')}** identificado con **DNI {dp.get('dni')}** de Nacionalidad **{dp.get('nacionalidad')}**
+
+            Declaro que conozco los objetivos y las fases del Proceso de Peritación Psicológica llevado a cabo por la/el **Lic. {lic_auto}** con el propósito de elevar un Informe Psicológico.
+
+            Estoy dispuesto(a) a iniciar dicho proceso, siendo consciente que su contenido versa sobre diversos aspectos de mi historia vital. He sido informado que los encuentros se realizarán por la plataforma **{plataforma_auto}**, el día **{dias_auto}** (hora oficial Argentina GMT-3) y que debo mantener el micrófono y la cámara constantemente encendidas, por tanto, firmo de manera voluntaria, bajo ningún tipo de imposición este documento.
+            """
+            st.markdown(texto_consent)
+
+            st.divider()
+            consent_check = st.checkbox("✅ He leído, comprendido y acepto voluntariamente el Consentimiento Informado para Tele Evaluación*", value=False)
+            firma_check = st.checkbox("✅ Confirmo que mis datos (Nombre, DNI, Nacionalidad) son correctos y firmo digitalmente este documento*", value=False)
+
+            if st.form_submit_button("Firmar y Continuar a los Tests", type="primary", use_container_width=True):
+                if not (consent_check and firma_check):
+                    st.error("Tildá ambas casillas para firmar digitalmente.")
+                else:
+                    # Guardar todo - autocompletado con hora BA
+                    texto_final = f"CONSENTIMIENTO INFORMADO TELE EVALUACION PSICOLOGICA - Lugar y Fecha: {lugar_fecha_auto} - Yo {dp.get('nombre')} {dp.get('apellido')} identificado con DNI {dp.get('dni')} de Nacionalidad {dp.get('nacionalidad')} Localidad {dp.get('localidad')} - Lic {lic_auto} - Plataforma {plataforma_auto} dia {dias_auto} anio {anio_auto} - Hora oficial {ahora_ba.isoformat()} - Acepta mantener microfono y camara encendidas - Firma voluntaria"
+                    dp.update({
+                        "consent_lugar_fecha": lugar_fecha_auto,
+                        "consent_lic": lic_auto,
+                        "consent_plataforma": plataforma_auto,
+                        "consent_dias": dias_auto,
+                        "consent_anio": anio_auto,
+                        "consent_texto_final": texto_final,
+                        "consentimiento": True,
+                        "fecha_consentimiento": ahora_ba.strftime("%d/%m/%Y %H:%M"),
+                        "fecha_consentimiento_iso": ahora_ba.isoformat()
+                    })
+                    datos_token["datos_persona"] = dp
+                    guardar_token_db(token_actual, datos_token)
+                    st.success("Consentimiento firmado correctamente.")
                     st.rerun()
         st.stop()
 
@@ -2195,7 +1853,7 @@ else:
     st.success(f"Bienvenido/a {dp.get('nombre')} {dp.get('apellido')} | {dp.get('localidad')}")
     test_seleccionado = st.selectbox("Seleccioná el test", TESTS_DISPONIBLES)
     # --- Mostrar consigna oficial en hoja del evaluado ---
-    key_map = {"LSB-50": "LSB-50", "MCMI-III": "MCMI-III", "MCMI-IV": "MCMI-IV", "CUIDA": "CUIDA", "STAI": "STAI", "BDI-II": "BDI-II", "PAI": "PAI"}
+    key_map = {"LSB-50": "LSB-50", "MCMI-III": "MCMI-III", "MCMI-IV": "MCMI-IV", "EGPT-5": "EGEP-5", "EGEP-5": "EGEP-5", "STAI": "STAI", "BDI-II": "BDI-II"}
     test_key_tmp = None
     for k in key_map:
         if test_seleccionado.startswith(k):
@@ -2230,7 +1888,7 @@ else:
                 st.rerun()
     elif test_seleccionado.startswith("MCMI-IV"):
         st.subheader("MCMI-IV - Versión Vigente DSM-5 (195 ítems)")
-        st.warning("⚠️ Módulo MCMI-IV: reemplace los placeholders por los 195 ítems oficiales con licencia TEA/Pearson.")
+        # st.warning eliminado - ítems oficiales cargados
         respuestas_mcmi4={}
         with st.form("form_mcmi4"):
             for idx, preg in enumerate(ITEMS_MCMI_IV,1):
@@ -2241,18 +1899,106 @@ else:
                 guardar_token_db(token_actual, datos_token)
                 st.session_state["test_enviado"]=True
                 st.rerun()
-    elif test_seleccionado.startswith("CUIDA"):
-        st.subheader("CUIDA")
-        respuestas_cuida={}
-        with st.form("form_cuida"):
-            for idx, preg in enumerate(ITEMS_CUIDA,1):
-                respuestas_cuida[f"p_{idx}"] = st.radio(preg, options=list(OPCIONES_CUIDA.keys()), format_func=lambda x: OPCIONES_CUIDA[x], horizontal=True, key=f"cuida_{idx}_{token_actual}")
+    elif test_seleccionado.startswith("EGPT") or test_seleccionado.startswith("EGEP"):
+        st.subheader("EGPT-5 / EGEP-5 - Evaluación Global del Estrés Postraumático DSM-5 (CON BAREMOS)")
+        st.info("**Instrumento con baremos oficiales - Para peritaje de daño psíquico civil/laboral** - Pc y niveles de gravedad incluidos")
+        respuestas_egep={}
+        with st.form("form_egep5"):
+            st.markdown("### Sección 1: Acontecimiento traumático (Items 13-26)")
+            c1,c2 = st.columns(2)
+            gravedad_acont = c1.selectbox("13. Gravedad del acontecimiento:", OPCIONES_EGEP5_GRAVEDAD_ACONT, key=f"egep_grav_{token_actual}")
+            cuando_primera = c2.selectbox("14. ¿Cuándo por primera vez?", OPCIONES_EGEP5_TEMPORAL, key=f"egep_cuando_{token_actual}")
+            frecuencia = st.selectbox("15. Frecuencia del acontecimiento:", OPCIONES_EGEP5_FRECUENCIA, key=f"egep_frec_{token_actual}")
+            st.markdown("Durante ese acontecimiento, usted se sintió...")
+            col_miedo, col_indef, col_horror = st.columns(3)
+            miedo = col_miedo.radio("16. ¿Miedo?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_miedo_{token_actual}")
+            indefenso = col_indef.radio("17. ¿Indefenso?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_indef_{token_actual}")
+            horrorizado = col_horror.radio("18. ¿Horrorizado?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_horror_{token_actual}")
+            st.markdown("Ese acontecimiento supuso...")
+            les_grave = st.radio("19. ¿Lesión grave para usted?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_les_{token_actual}")
+            les_otros = st.radio("20. ¿Lesión grave o muerte de otras personas?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_les_otros_{token_actual}")
+            amenaza_int = st.radio("21. ¿Amenaza para su integridad física?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_am_int_{token_actual}")
+            amenaza_int_otros = st.radio("22. ¿Amenaza para integridad física de otras personas?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_am_int_otros_{token_actual}")
+            amenaza_vida = st.radio("23. ¿Amenaza para su vida?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_am_vida_{token_actual}")
+            amenaza_vida_otros = st.radio("24. ¿Amenaza para vida de otras personas?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_am_vida_otros_{token_actual}")
+            escenas_desag = st.radio("25. ¿Escenas desagradables?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_escenas_{token_actual}")
+            amenaza_dign = st.radio("26. ¿Amenazas para dignidad/honor/estabilidad emocional?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_dign_{token_actual}")
+            
+            st.divider()
+            st.markdown("### Sección 2: Síntomas (27-49) - Marque Sí/No y grado 0-4")
+            st.caption("0=Ninguna | 1=Leve | 2=Moderada | 3=Grave | 4=Extrema - Solo puntúe si respondió Sí")
+            for idx, preg in enumerate(ITEMS_EGEP5_SINTOMAS,27):
+                st.markdown(f"**{preg}**")
+                col_si, col_grado = st.columns([1,3])
+                con_si = col_si.radio(f"¿Presente? {idx}", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_si_{idx}_{token_actual}", label_visibility="collapsed")
+                grado = col_grado.radio(f"Grado {idx}", options=list(OPCIONES_EGEP5_MOLESTIA.keys()), format_func=lambda x: OPCIONES_EGEP5_MOLESTIA[x], horizontal=True, key=f"egep_grado_{idx}_{token_actual}")
+                if con_si == "No":
+                    respuestas_egep[f"p_{idx}_si"] = "No"
+                    respuestas_egep[f"p_{idx}_grado"] = 0
+                else:
+                    respuestas_egep[f"p_{idx}_si"] = "Sí"
+                    respuestas_egep[f"p_{idx}_grado"] = grado
                 st.divider()
-            if st.form_submit_button("Guardar y Enviar CUIDA", use_container_width=True, type="primary"):
-                datos_token["evaluaciones"]["CUIDA"]=respuestas_cuida
+            
+            st.markdown("### Sección 3: Temporalidad y funcionamiento (50-58)")
+            desde_cuando = st.selectbox("50. ¿Desde cuándo experimenta estos problemas?", ["<1 mes", ">1 mes y <3 meses", ">3 meses"], key=f"egep_50_{token_actual}")
+            tiempo_aparicion = st.selectbox("51. ¿Cuánto tardaron en aparecer tras el acontecimiento?", ["Nada más ocurrir", "Durante los 6 primeros meses", "6 meses o más después (presentación demorada)"], key=f"egep_51_{token_actual}")
+            consulta_med = st.radio("52. ¿Consultó al médico?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_52_{token_actual}")
+            medicacion = st.radio("53. ¿Tomó medicación?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_53_{token_actual}")
+            alcohol_drogas = st.radio("54. ¿Alcohol/drogas para afrontar?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_54_{token_actual}")
+            afecta_laboral = st.radio("55. ¿Afectó vida laboral/académica?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_55_{token_actual}")
+            afecta_social = st.radio("56. ¿Afectó relaciones sociales?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_56_{token_actual}")
+            afecta_familiar = st.radio("57. ¿Afectó relaciones familiares/pareja?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_57_{token_actual}")
+            afecta_otro = st.radio("58. ¿Afectó otro aspecto importante?", OPCIONES_EGEP5_SINO, horizontal=True, key=f"egep_58_{token_actual}")
+            afecta_otro_desc = st.text_area("Especifique otro aspecto (58):", key=f"egep_58_desc_{token_actual}")
+
+            if st.form_submit_button("Guardar y Enviar EGPT-5 / EGEP-5 (CON BAREMOS)", use_container_width=True, type="primary"):
+                respuestas_egep["acont_gravedad"] = gravedad_acont
+                respuestas_egep["acont_cuando"] = cuando_primera
+                respuestas_egep["acont_frecuencia"] = frecuencia
+                respuestas_egep["acont_miedo"] = miedo
+                respuestas_egep["acont_indefenso"] = indefenso
+                respuestas_egep["acont_horrorizado"] = horrorizado
+                respuestas_egep["acont_lesion_grave"] = les_grave
+                respuestas_egep["acont_lesion_otros"] = les_otros
+                respuestas_egep["acont_amenaza_integridad"] = amenaza_int
+                respuestas_egep["acont_amenaza_integridad_otros"] = amenaza_int_otros
+                respuestas_egep["acont_amenaza_vida"] = amenaza_vida
+                respuestas_egep["acont_amenaza_vida_otros"] = amenaza_vida_otros
+                respuestas_egep["acont_escenas_desag"] = escenas_desag
+                respuestas_egep["acont_amenaza_dignidad"] = amenaza_dign
+                respuestas_egep["temp_desde_cuando"] = desde_cuando
+                respuestas_egep["temp_tiempo_aparicion"] = tiempo_aparicion
+                respuestas_egep["func_medico"] = consulta_med
+                respuestas_egep["func_medicacion"] = medicacion
+                respuestas_egep["func_alcohol"] = alcohol_drogas
+                respuestas_egep["func_laboral"] = afecta_laboral
+                respuestas_egep["func_social"] = afecta_social
+                respuestas_egep["func_familiar"] = afecta_familiar
+                respuestas_egep["func_otro"] = afecta_otro
+                respuestas_egep["func_otro_desc"] = afecta_otro_desc
+                try:
+                    I = sum([respuestas_egep.get(f"p_{i}_grado",0) for i in range(27,32)])
+                    E = sum([respuestas_egep.get(f"p_{i}_grado",0) for i in range(32,34)])
+                    C = sum([respuestas_egep.get(f"p_{i}_grado",0) for i in range(34,41)])
+                    A = sum([respuestas_egep.get(f"p_{i}_grado",0) for i in range(41,47)])
+                    Total = I+E+C+A
+                    F = sum([1 for k in ["func_medico","func_medicacion","func_alcohol","func_laboral","func_social","func_familiar","func_otro"] if respuestas_egep.get(k)=="Sí"])
+                    respuestas_egep["puntaje_I"] = I
+                    respuestas_egep["puntaje_E"] = E
+                    respuestas_egep["puntaje_C"] = C
+                    respuestas_egep["puntaje_A"] = A
+                    respuestas_egep["puntaje_Total"] = Total
+                    respuestas_egep["puntaje_F"] = F
+                    respuestas_egep["percentil_Total"] = obtener_percentil_egep5(Total, "Total")
+                    respuestas_egep["interpretacion"] = interpretar_egep5(Total)
+                except:
+                    pass
+                datos_token["evaluaciones"]["EGPT-5"]=respuestas_egep
                 guardar_token_db(token_actual, datos_token)
                 st.session_state["test_enviado"]=True
                 st.rerun()
+
     elif test_seleccionado.startswith("STAI"):
         st.subheader("STAI")
         respuestas_stai={}
@@ -2277,15 +2023,4 @@ else:
                 guardar_token_db(token_actual, datos_token)
                 st.session_state["test_enviado"]=True
                 st.rerun()
-    elif test_seleccionado.startswith("PAI"):
-        st.subheader("PAI")
-        respuestas_pai={}
-        with st.form("form_pai"):
-            for idx, preg in enumerate(ITEMS_PAI,1):
-                respuestas_pai[f"p_{idx}"] = st.radio(preg, options=list(OPCIONES_PAI.keys()), format_func=lambda x: OPCIONES_PAI[x], horizontal=True, key=f"pai_{idx}_{token_actual}")
-                st.divider()
-            if st.form_submit_button("Guardar y Enviar PAI", use_container_width=True, type="primary"):
-                datos_token["evaluaciones"]["PAI"]=respuestas_pai
-                guardar_token_db(token_actual, datos_token)
-                st.session_state["test_enviado"]=True
-                st.rerun()
+# PAI eliminado en V20

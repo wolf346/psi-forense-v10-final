@@ -822,6 +822,20 @@ OPCIONES_MCMI = ["Verdadero", "Falso"]
 
 
 # ==================== EGPT-5 / EGEP-5 - EVALUACION GLOBAL DEL ESTRES POSTRAUMATICO DSM-5 - CON BAREMOS ====================
+ITEMS_EGEP5_EVENTOS = [
+    "1. Desastres naturales (inundaciones, huracanes, tornados, terremotos...)",
+    "2. Accidentes de medios de transporte (coche, tren, avión, barco...)",
+    "3. Otro tipo de accidentes (laborales, industriales, domésticos, actividades de ocio...)",
+    "4. Combate o exposición a zona de guerra (en el ejército o como civil)",
+    "5. Violación, abuso o ataque sexual",
+    "6. Acoso (sexual, en el trabajo, en antiguas relaciones...) o maltrato psicológico",
+    "7. Violencia física (ataques, asaltos, maltrato...)",
+    "8. Actos terroristas o tortura",
+    "9. Encarcelamiento, detención o cautividad forzosa",
+    "10. Muerte accidental o violenta de una persona o de un ser querido",
+    "11. Cualquier otro acontecimiento o experiencia estresante (especificar)",
+]
+
 ITEMS_EGEP5_ACONTECIMIENTO = [
     "13. Valore la gravedad del acontecimiento: Leve, Moderada, Grave, Extrema",
     "14. ¿Cuándo sufrió ese acontecimiento por primera vez? (Infancia/adolescencia, Hace >3 meses, Hace >1 mes y <3 meses, Último mes)",
@@ -1904,7 +1918,28 @@ else:
         st.info("**Instrumento con baremos oficiales - Para peritaje de daño psíquico civil/laboral** - Pc y niveles de gravedad incluidos")
         respuestas_egep={}
         with st.form("form_egep5"):
-            st.markdown("### Sección 1: Acontecimiento traumático (Items 13-26)")
+            st.markdown("### SECCIÓN 1: ACONTECIMIENTOS (Items 1-12) - Historia de exposición")
+            st.caption("Para cada acontecimiento marque si: Me sucedió / Lo presencié directamente / Le sucedió a alguien cercano. Puede marcar varias columnas.")
+            for idx, evento in enumerate(ITEMS_EGEP5_EVENTOS, 1):
+                st.markdown(f"**{evento}**")
+                col_a, col_b, col_c = st.columns(3)
+                me_sucedio = col_a.checkbox(f"Me sucedió {idx}", key=f"egep_evt_me_{idx}_{token_actual}")
+                presencie = col_b.checkbox(f"Lo presencié {idx}", key=f"egep_evt_pres_{idx}_{token_actual}")
+                cercano = col_c.checkbox(f"A alguien cercano {idx}", key=f"egep_evt_cerc_{idx}_{token_actual}")
+                respuestas_egep[f"evt_{idx}_me"] = me_sucedio
+                respuestas_egep[f"evt_{idx}_pres"] = presencie
+                respuestas_egep[f"evt_{idx}_cerc"] = cercano
+                if idx == 11:
+                    otro_desc = st.text_input(f"Especifique otro acontecimiento (11):", key=f"egep_evt_11_desc_{token_actual}")
+                    respuestas_egep["evt_11_desc"] = otro_desc
+                st.divider()
+            
+            st.markdown("**12. Indique cuál de los acontecimientos marcados es el que le ha causado o le causa más molestias (rodee con un círculo) - Señale solo uno:**")
+            evento_mas_molesto = st.selectbox("Evento más molesto:", [f"{i}. {ev}" for i, ev in enumerate(ITEMS_EGEP5_EVENTOS,1)], key=f"egep_evento_molesto_{token_actual}")
+            desc_evento = st.text_area("12. Describa brevemente el acontecimiento que acaba de indicar (el que más molestias causa):", key=f"egep_desc_evento_{token_actual}")
+            
+            st.divider()
+            st.markdown("### Sección 1b: Caracterización del acontecimiento (Items 13-26)")
             c1,c2 = st.columns(2)
             gravedad_acont = c1.selectbox("13. Gravedad del acontecimiento:", OPCIONES_EGEP5_GRAVEDAD_ACONT, key=f"egep_grav_{token_actual}")
             cuando_primera = c2.selectbox("14. ¿Cuándo por primera vez?", OPCIONES_EGEP5_TEMPORAL, key=f"egep_cuando_{token_actual}")
@@ -1953,6 +1988,8 @@ else:
             afecta_otro_desc = st.text_area("Especifique otro aspecto (58):", key=f"egep_58_desc_{token_actual}")
 
             if st.form_submit_button("Guardar y Enviar EGPT-5 / EGEP-5 (CON BAREMOS)", use_container_width=True, type="primary"):
+                respuestas_egep["evento_mas_molesto"] = evento_mas_molesto
+                respuestas_egep["descripcion_evento_12"] = desc_evento
                 respuestas_egep["acont_gravedad"] = gravedad_acont
                 respuestas_egep["acont_cuando"] = cuando_primera
                 respuestas_egep["acont_frecuencia"] = frecuencia
